@@ -84,20 +84,15 @@ public abstract class Coordinate {
      */
     private DataColumnSpec m_columnSpec;
 
-    private static final Map<Class<? extends DataValue>, CoordinateFactory> MAP =
-            new HashMap<Class<? extends DataValue>, CoordinateFactory>();
+    private static final Map<Class<? extends DataValue>, CoordinateFactory> MAP = new HashMap<>();
 
-    private static final Map<Class<? extends DataValue>, Set<PolicyStrategy>> POLICY_MAP =
-            new HashMap<Class<? extends DataValue>, Set<PolicyStrategy>>();
+    private static final Map<Class<? extends DataValue>, Set<PolicyStrategy>> POLICY_MAP = new HashMap<>();
 
-    private static final Map<String, PolicyStrategy> POLICY_ID_MAP =
-            new HashMap<String, PolicyStrategy>();
+    private static final Map<String, PolicyStrategy> POLICY_ID_MAP = new HashMap<>();
 
-    private static final Map<Class<? extends DataValue>, Set<MappingMethod>> MAPPING_METHODS =
-            new HashMap<Class<? extends DataValue>, Set<MappingMethod>>();
+    private static final Map<Class<? extends DataValue>, Set<MappingMethod>> MAPPING_METHODS = new HashMap<>();
 
-    private static final Map<String, MappingMethod> MAPPING_ID =
-            new HashMap<String, MappingMethod>();
+    private static final Map<String, MappingMethod> MAPPING_ID = new HashMap<>();
 
     static {
         addCoordinateFactory(DoubleValue.class, new DoubleCoordinateFactory());
@@ -118,7 +113,7 @@ public abstract class Coordinate {
 
     }
 
-    private final Set<DataValue> m_desiredValues = new HashSet<DataValue>();
+    private final Set<DataValue> m_desiredValues = new HashSet<>();
 
     private MappingMethod m_activeMethod = null;
 
@@ -153,16 +148,16 @@ public abstract class Coordinate {
      * @param policy the numeric tick policy
      * @return the according strategy
      */
-    protected PolicyStrategy getPolicyStategy(final String policy) {
-        Set<PolicyStrategy> strategies = new HashSet<PolicyStrategy>();
+    protected final PolicyStrategy getPolicyStategy(final String policy) {
+        Set<PolicyStrategy> strategies = new HashSet<>();
         for (Class<? extends DataValue> cl : m_columnSpec.getType()
                 .getValueClasses()) {
             Set<PolicyStrategy> temp = POLICY_MAP.get(cl);
-            if (temp != null && temp.size() > 0) {
+            if (temp != null && !temp.isEmpty()) {
                 strategies.addAll(temp);
             }
         }
-        if (strategies.size() == 0) {
+        if (strategies.isEmpty()) {
             throw new IllegalArgumentException("No strategy available for "
                     + m_columnSpec.getType());
         }
@@ -171,7 +166,7 @@ public abstract class Coordinate {
                 return strat;
             }
         }
-        if (strategies.size() > 0) {
+        if (!strategies.isEmpty()) {
             return strategies.iterator().next();
         }
         return null;
@@ -183,11 +178,11 @@ public abstract class Coordinate {
      * @return the compatible policies or <code>null</code> if none.
      */
     public Set<PolicyStrategy> getCompatiblePolicies() {
-        Set<PolicyStrategy> strategies = new HashSet<PolicyStrategy>();
+        Set<PolicyStrategy> strategies = new HashSet<>();
         for (Class<? extends DataValue> cl : m_columnSpec.getType()
                 .getValueClasses()) {
             Set<PolicyStrategy> temp = POLICY_MAP.get(cl);
-            if (temp != null && temp.size() > 0) {
+            if (temp != null && !temp.isEmpty()) {
                 strategies.addAll(temp);
             }
         }
@@ -206,7 +201,7 @@ public abstract class Coordinate {
             final String id, final PolicyStrategy strategy) {
         Set<PolicyStrategy> strategies = POLICY_MAP.get(dataValue);
         if (strategies == null) {
-            strategies = new HashSet<PolicyStrategy>();
+            strategies = new HashSet<>();
         }
         strategies.add(strategy);
         POLICY_MAP.put(dataValue, strategies);
@@ -333,7 +328,7 @@ public abstract class Coordinate {
      *
      * @return the underlying column spec of this coordinate
      */
-    DataColumnSpec getDataColumnSpec() {
+    final DataColumnSpec getDataColumnSpec() {
         DataColumnSpecCreator creator = new DataColumnSpecCreator(m_columnSpec);
         DataCell newLowerBound =
                 applyMappingMethod(m_columnSpec.getDomain().getLowerBound());
@@ -478,7 +473,7 @@ public abstract class Coordinate {
             final String id, final MappingMethod mappingMethod) {
         Set<MappingMethod> mapMethods = MAPPING_METHODS.get(clazz);
         if (mapMethods == null) {
-            mapMethods = new HashSet<MappingMethod>();
+            mapMethods = new HashSet<>();
         }
         mapMethods.add(mappingMethod);
         MAPPING_METHODS.put(clazz, mapMethods);
@@ -491,11 +486,11 @@ public abstract class Coordinate {
      * @return a {@link Set} of {@link MappingMethod}s
      */
     public Set<MappingMethod> getCompatibleMappingMethods() {
-        Set<MappingMethod> methods = new HashSet<MappingMethod>();
+        Set<MappingMethod> methods = new HashSet<>();
         for (Class<? extends DataValue> cl : m_columnSpec.getType()
                 .getValueClasses()) {
             Set<MappingMethod> temp = MAPPING_METHODS.get(cl);
-            if (temp != null && temp.size() > 0) {
+            if (temp != null && !temp.isEmpty()) {
                 methods.addAll(temp);
             }
         }
@@ -540,14 +535,10 @@ public abstract class Coordinate {
      * @return the mapped value
      */
     protected DataCell applyMappingMethod(final DataCell datacell) {
-
-        // System.out.print("Mapping " + datacell);
-
         DataCell cell = datacell;
         if (m_activeMethod != null) {
             cell = m_activeMethod.doMapping(cell);
         }
-        // System.out.println(" to: " + cell);
         return cell;
     }
 

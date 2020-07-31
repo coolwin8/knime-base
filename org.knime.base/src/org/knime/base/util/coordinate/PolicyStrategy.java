@@ -90,7 +90,7 @@ public abstract class PolicyStrategy {
      * @param values the values
      */
     public void setValues(final DataValue... values) {
-        m_values = new HashSet<DataValue>();
+        m_values = new HashSet<>();
         m_values.addAll(Arrays.asList(values));
     }
 

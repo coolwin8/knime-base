@@ -58,9 +58,9 @@ public class NominalCoordinateFactory implements CoordinateFactory {
     /**
      * {@inheritDoc}
      */
+    @Override
     public Coordinate createCoordinate(final DataColumnSpec columnSpec) {
-        if ((columnSpec.getDomain().getValues() != null)
-                && (columnSpec.getDomain().getValues().size() > 0)) {
+        if ((columnSpec.getDomain().getValues() != null) && (!columnSpec.getDomain().getValues().isEmpty())) {
             return new NominalCoordinate(columnSpec);
         } else {
             return null;

@@ -62,6 +62,7 @@ import org.knime.core.data.def.IntCell;
  *
  * @author Stephan Sellien, University of Konstanz
  */
+@SuppressWarnings("squid:S1244")
 public class AscendingNumericTickPolicyStrategy extends PolicyStrategy {
 
     private static final double EPSILON = 0.5;
@@ -90,36 +91,21 @@ public class AscendingNumericTickPolicyStrategy extends PolicyStrategy {
         super(name);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public double calculateMappedValue(final DataCell domainValueCell,
-            final double absoluteLength, final double minDomainValue,
-            final double maxDomainValue) {
+    public double calculateMappedValue(final DataCell domainValueCell, final double absoluteLength,
+        final double minDomainValue, final double maxDomainValue) {
 
         if (minDomainValue == maxDomainValue) {
             // only one value?
             return absoluteLength / 2;
         }
-
         double value = ((DoubleValue)domainValueCell).getDoubleValue();
-
         // is value really a useful double?
         if (Double.isNaN(value)) {
             return -1.0;
+        } else {
+            return interpolatePosition(value, minDomainValue, maxDomainValue, absoluteLength);
         }
-
-        // only 1 value?
-        if (minDomainValue == maxDomainValue) {
-            return absoluteLength / 2;
-        }
-
-        double mappedValue =
-                interpolatePosition(value, minDomainValue, maxDomainValue,
-                        absoluteLength);
-
-        return mappedValue;
     }
 
     /**
@@ -134,11 +120,13 @@ public class AscendingNumericTickPolicyStrategy extends PolicyStrategy {
     protected double interpolatePosition(final double value, final double min,
             final double max, final double absLength) {
 
-        double val = value;
-        if (val == Double.POSITIVE_INFINITY) {
+        final double val;
+        if (value == Double.POSITIVE_INFINITY) {
             val = Double.MAX_VALUE;
-        } else if (val == Double.NEGATIVE_INFINITY) {
+        } else if (value == Double.NEGATIVE_INFINITY) {
             val = -Double.MAX_VALUE;
+        } else {
+            val = value;
         }
 
         double minimum = Math.min(min, max);
@@ -198,35 +186,32 @@ public class AscendingNumericTickPolicyStrategy extends PolicyStrategy {
         return coordMapping;
     }
 
-    private Double[] makeTicks(final double min, final double max,
-            final int count) {
+    private Double[] makeTicks(final double min, final double max, final int count) {
 
         double minimum = Math.min(min, max);
-        minimum =
-                (minimum <= Double.NEGATIVE_INFINITY ? -Double.MAX_VALUE
-                        : minimum);
+        minimum = (minimum <= Double.NEGATIVE_INFINITY ? -Double.MAX_VALUE : minimum);
         double maximum = Math.max(min, max);
-        maximum =
-                (maximum >= Double.POSITIVE_INFINITY ? Double.MAX_VALUE
-                        : maximum);
+        maximum = (maximum >= Double.POSITIVE_INFINITY ? Double.MAX_VALUE : maximum);
 
         if (count == 1) {
             return new Double[]{(minimum + maximum) / 2};
         }
 
         // so step is <= Double.MAX_VALUE
-
         double step = Math.log10((maximum - minimum) / count);
         double base = Math.floor(step);
         double frac = step - base;
 
-        if (minimum == maximum || Double.isInfinite(step) || Double.isNaN(step)
-                || Double.isInfinite(base) || Double.isNaN(base)
-                || Double.isInfinite(frac) || Double.isNaN(frac)) {
+        if (minimum == maximum || !Double.isFinite(step) || !Double.isFinite(base) || Double.isFinite(frac)) {
             return new Double[]{(minimum + maximum) / 2};
         }
 
-        ArrayList<Double> result = new ArrayList<Double>();
+        return makeTicks(minimum, maximum, base, frac);
+    }
+
+    private Double[] makeTicks(final double minimum, final double maximum, double base, double frac) {
+        double step;
+        ArrayList<Double> result = new ArrayList<>();
 
         if (frac < 0.1) {
             frac = 1;
@@ -243,27 +228,21 @@ public class AscendingNumericTickPolicyStrategy extends PolicyStrategy {
 
         step = frac * Math.pow(10, base);
 
+        calculateTicks(minimum, maximum, step, result);
+        adjustMaxTick(maximum, step, result);
+        addTicksForOriginalDatapoints(minimum, maximum, result);
+        Collections.sort(result);
+        return result.toArray(new Double[0]);
+    }
+
+    private void calculateTicks(final double minimum, final double maximum, final double step,
+        final ArrayList<Double> result) {
         double value = minimum;
 
         while (value + 0.55 * step < maximum) {
-            if (result.size() == 0
-                    || result.get(result.size() - 1) + EPSILON * step < value) {
-
-                boolean add = true;
-                for (DataValue v : getValues()) {
-                    if (v instanceof DoubleValue) {
-                        double desVal = ((DoubleValue)v).getDoubleValue();
-                        if (value + EPSILON * step > desVal && value < desVal) {
-                            add = false;
-                        } else if (value - EPSILON * step < desVal
-                                && value > desVal) {
-                            add = false;
-                        }
-                    }
-                }
-                if (add) {
-                    result.add(value);
-                }
+            if ((result.isEmpty() || result.get(result.size() - 1) + EPSILON * step < value)
+                && requiresTick(step, value)) {
+                result.add(value);
             }
             int m = 1;
             while (value + m * step == value) {
@@ -271,7 +250,22 @@ public class AscendingNumericTickPolicyStrategy extends PolicyStrategy {
             }
             value += m * step;
         }
+    }
 
+    private boolean requiresTick(final double step, final double value) {
+        for (final DataValue v : getValues()) {
+            if (v instanceof DoubleValue) {
+                final double desVal = ((DoubleValue)v).getDoubleValue();
+                if ((value + EPSILON * step > desVal && value < desVal)
+                    || (value - EPSILON * step < desVal && value > desVal)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    private static void adjustMaxTick(final double maximum, final double step, final ArrayList<Double> result) {
         if (result.get(result.size() - 1) < maximum) {
             // enough space?
             if (result.get(result.size() - 1) + EPSILON * step > maximum) {
@@ -279,7 +273,10 @@ public class AscendingNumericTickPolicyStrategy extends PolicyStrategy {
             }
             result.add(maximum);
         }
+    }
 
+    private void addTicksForOriginalDatapoints(final double minimum, final double maximum,
+        final ArrayList<Double> result) {
         for (DataValue v : getValues()) {
             if (v instanceof DoubleValue) {
                 double val = ((DoubleValue)v).getDoubleValue();
@@ -288,15 +285,8 @@ public class AscendingNumericTickPolicyStrategy extends PolicyStrategy {
                 }
             }
         }
-
-        Collections.sort(result);
-
-        return result.toArray(new Double[0]);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public CoordinateMapping[] getTickPositions(final int absoluteLength,
             final int minDomainValue, final int maxDomainValue,
@@ -314,7 +304,7 @@ public class AscendingNumericTickPolicyStrategy extends PolicyStrategy {
         long stepSize = Math.max((longMaxDomainValue - longMinDomainValue) / nrTicks, 1);
 
         List<CoordinateMapping> mapping =
-            new ArrayList<CoordinateMapping>((int)((longMaxDomainValue - longMinDomainValue) / stepSize + 1));
+            new ArrayList<>((int)((longMaxDomainValue - longMinDomainValue) / stepSize + 1));
 
         // the domValue always fits in an int but for the computations below it's more safe and efficient to use a long
         long domValue = minDomainValue;

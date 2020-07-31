@@ -58,6 +58,7 @@ public class IntegerCoordinateFactory implements CoordinateFactory {
     /**
      * {@inheritDoc}
      */
+    @Override
     public Coordinate createCoordinate(final DataColumnSpec columnSpec) {
         return new IntegerCoordinate(columnSpec);
     }

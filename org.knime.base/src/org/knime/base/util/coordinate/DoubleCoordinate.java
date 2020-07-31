@@ -91,18 +91,6 @@ public class DoubleCoordinate extends NumericCoordinate {
     private static final String DEFAULT_TICK_POLICY = "Ascending";
 
     /**
-     * An optional prefix (extension) of the coordinate beyond the domain
-     * length. A value larger or equal 0 is expected and is assumed to be a
-     * percent value.
-     */
-    // private double m_coordPrefix;
-    /**
-     * An optional postfix (extension) of the coordinate beyond the domain
-     * length. A value larger or equal 0 is expected and is assumed to be a
-     * percent value.
-     */
-    // private double m_coordPostfix;
-    /**
      * The absolute tick distance is used when absolute values according to the
      * placement of a tick are requested. The absolute tick distance is
      * dependent on the usage.
@@ -149,7 +137,7 @@ public class DoubleCoordinate extends NumericCoordinate {
             final double coordinatePrefix, final double coordinatePostfix,
             final double absoluteTickDistance, final String tickPolicy,
             final int maxDomainLabelLength) {
-        super(dataColumnSpec);
+        super(dataColumnSpec,tickPolicy);
 
         // check the column type first it must be compatible to a double
         // value as it is the most general on
@@ -206,8 +194,6 @@ public class DoubleCoordinate extends NumericCoordinate {
                     + ") and postfix (" + coordinatePostfix + ")extension "
                     + "must be equal or larger than zero.");
         }
-        // m_coordPrefix = coordinatePrefix;
-        // m_coordPostfix = coordinatePostfix;
 
         // the tick distance must be larger than zero
         if (absoluteTickDistance <= 0) {
@@ -216,30 +202,23 @@ public class DoubleCoordinate extends NumericCoordinate {
                             + absoluteTickDistance);
         }
         m_absoluteTickDistance = absoluteTickDistance;
-
-        setPolicy(getPolicyStategy(tickPolicy));
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    protected CoordinateMapping[] getTickPositionsInternal(
-            final double absoluteLength) {
+    protected CoordinateMapping[] getTickPositionsInternal(final double absoluteLength) {
         PolicyStrategy strategy = getCurrentPolicy();
         if (strategy != null) {
             strategy.setValues(getDesiredValues());
-            CoordinateMapping[] coordMapping =
-                    strategy.getTickPositions(absoluteLength,
-                            getMinDomainValue(), getMaxDomainValue(),
-                            m_absoluteTickDistance, getNegativeInfinity(),
-                            getPositiveInfinity());
-            return coordMapping;
+            return strategy.getTickPositions(absoluteLength, getMinDomainValue(), getMaxDomainValue(),
+                m_absoluteTickDistance, getNegativeInfinity(), getPositiveInfinity());
         }
 
         double middle = (getMaxDomainValue() - getMinDomainValue()) / 2;
-        return new CoordinateMapping[]{new DoubleCoordinateMapping(
-                formatNumber(middle), middle, (int)(absoluteLength / 2))};
+        return new CoordinateMapping[]{
+            new DoubleCoordinateMapping(formatNumber(middle), middle, (int)(absoluteLength / 2))};
     }
 
     /**
@@ -267,7 +246,7 @@ public class DoubleCoordinate extends NumericCoordinate {
         // convert to string
         String numberAsString = Double.toString(maxAbsValue);
         // cut off decimal postfix
-        int decimalPointPos = numberAsString.indexOf(".");
+        int decimalPointPos = numberAsString.indexOf('.');
         if (decimalPointPos >= 0) {
             numberAsString = numberAsString.substring(0, decimalPointPos);
         }
@@ -282,7 +261,7 @@ public class DoubleCoordinate extends NumericCoordinate {
         // the pattern is switched to scientific notation
         if (maxAbsValue >= maxNumber) {
 
-            StringBuffer afterDecimalDigits = new StringBuffer();
+            StringBuilder afterDecimalDigits = new StringBuilder();
             // -4 corresponds to the mandatory first position, the decimal point
             // the E for the exponent and the exponent value (maybe it is larger
             // but this is rather a fuzzy formating)
@@ -302,7 +281,7 @@ public class DoubleCoordinate extends NumericCoordinate {
 
             // create the postfix pattern according to the number postfix digits
             // each # represents a postfix digit
-            StringBuffer postfixPatter = new StringBuffer();
+            StringBuilder postfixPatter = new StringBuilder();
             for (int i = 0; i < postfixLength; i++) {
 
                 // the first digit appends the decimal point and a
@@ -356,19 +335,4 @@ public class DoubleCoordinate extends NumericCoordinate {
         return !Double.isNaN(getMaxDomainValue());
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setMaxDomainValue(final double maxDomainValue) {
-        super.setMaxDomainValue(maxDomainValue);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setMinDomainValue(final double minDomainValue) {
-        super.setMinDomainValue(minDomainValue);
-    }
 }

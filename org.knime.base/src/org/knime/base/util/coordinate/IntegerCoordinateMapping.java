@@ -56,7 +56,6 @@ import org.knime.core.data.def.IntCell;
  */
 public class IntegerCoordinateMapping extends CoordinateMapping {
 
-
     /**
      * Constructs a coordinate mapping.
      *
@@ -64,10 +63,8 @@ public class IntegerCoordinateMapping extends CoordinateMapping {
      * @param domainValue the domain value
      * @param mappingValue the corresponding mapped value
      */
-    protected IntegerCoordinateMapping(final String stringDomainValue,
-            final int domainValue, final double mappingValue) {
-
-        super(stringDomainValue, mappingValue);
-        setValues(new IntCell(domainValue));
+    protected IntegerCoordinateMapping(final String stringDomainValue, final int domainValue,
+        final double mappingValue) {
+        super(stringDomainValue, mappingValue, new IntCell(domainValue));
     }
 }

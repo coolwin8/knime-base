@@ -66,9 +66,7 @@ class IntegerCoordinate extends NumericCoordinate {
      * @param dataColumnSpec the column specification
      */
     protected IntegerCoordinate(final DataColumnSpec dataColumnSpec) {
-        super(dataColumnSpec);
-
-        setPolicy(getPolicyStategy("Ascending"));
+        super(dataColumnSpec, "Ascending");
     }
 
     /**
@@ -81,7 +79,7 @@ class IntegerCoordinate extends NumericCoordinate {
         if (strategy != null) {
             strategy.setValues(getDesiredValues());
             CoordinateMapping[] mapping = null;
-            if (getMinDomainValue() % 1 == 0 && getMaxDomainValue() % 1 == 0) {
+            if (getMinDomainValue() % 1 == 0 && getMaxDomainValue() % 1 == 0) { //NOSONAR
                 mapping =
                         strategy.getTickPositions((int)absoluteLength,
                                 (int)getMinDomainValue(),
@@ -96,7 +94,7 @@ class IntegerCoordinate extends NumericCoordinate {
                                 getNegativeInfinity(), getPositiveInfinity());
             }
             List<CoordinateMapping> mappings =
-                    new ArrayList<CoordinateMapping>();
+                    new ArrayList<>();
             boolean hasNegInfinity = false;
             boolean hasPosInfinity = false;
             for (CoordinateMapping map : mapping) {
@@ -120,18 +118,15 @@ class IntegerCoordinate extends NumericCoordinate {
                             hasPosInfinity = true;
                         }
                     } else {
-                        // if (doubleVal % 1 == 0) {
-                        // is integer
                         mappings.add(new IntegerCoordinateMapping("" + value,
                                 value, map.getMappingValue()));
-                        // }
                     }
 
                 } catch (NumberFormatException e) {
                     // do nothing
                 }
             }
-            if (mappings.size() == 0) {
+            if (mappings.isEmpty()) {
                 // well .. no Integers found, use double scale
                 return mapping;
             }

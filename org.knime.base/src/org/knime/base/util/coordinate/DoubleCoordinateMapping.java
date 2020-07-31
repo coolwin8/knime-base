@@ -67,7 +67,6 @@ public class DoubleCoordinateMapping extends CoordinateMapping {
      */
     DoubleCoordinateMapping(final String stringDomainValue,
             final double domainValue, final double mappingValue) {
-        super(stringDomainValue, mappingValue);
-        setValues(new DoubleCell(domainValue));
+        super(stringDomainValue, mappingValue, new DoubleCell(domainValue));
     }
 }

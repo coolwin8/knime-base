@@ -82,6 +82,15 @@ public abstract class NumericCoordinate extends Coordinate {
     }
 
     /**
+     * @param dataColumnSpec
+     * @param policy
+     */
+    NumericCoordinate(final DataColumnSpec dataColumnSpec, final String policy) {
+        this(dataColumnSpec);
+        setPolicy(getPolicyStategy(policy));
+    }
+
+    /**
      * Returns an array with the positions of all ticks and their corresponding
      * domain values given an absolute length. The pre-specified tick policy
      * also influences the tick positions, e.g. ascending or descending.
@@ -107,10 +116,8 @@ public abstract class NumericCoordinate extends Coordinate {
     protected CoordinateMapping[] getTickPositionsWithLabels(
             final double absolutLength) {
         CoordinateMapping[] coordMap = getTickPositionsInternal(absolutLength);
-        if (coordMap == null || coordMap.length < 1
-                || getActiveMappingMethod() == null
-                || getCurrentPolicy() == null
-                || !getCurrentPolicy().isMappingAllowed()) {
+        if (coordMap == null || coordMap.length < 1 || getActiveMappingMethod() == null || // NOSONAR
+            getCurrentPolicy() == null || !getCurrentPolicy().isMappingAllowed()) {
             return coordMap;
         }
         CoordinateMapping[] result = new CoordinateMapping[coordMap.length];
@@ -123,9 +130,8 @@ public abstract class NumericCoordinate extends Coordinate {
             double val =
                     getActiveMappingMethod().getLabel(
                             new DoubleCell(value.getDoubleValue()));
-            result[index++] =
-                    new DoubleCoordinateMapping("" + val, val, cm
-                            .getMappingValue());
+            result[index] = new DoubleCoordinateMapping("" + val, val, cm.getMappingValue());
+            ++index;
         }
 
         return result;

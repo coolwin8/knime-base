@@ -56,7 +56,7 @@ import org.knime.core.data.DataValue;
  *
  * @author Christoph Sieb, University of Konstanz
  */
-public abstract class CoordinateMapping {
+public class CoordinateMapping {
 
     /**
      * The mapping of the domain value.
@@ -83,6 +83,18 @@ public abstract class CoordinateMapping {
     CoordinateMapping(final String stringDomValue, final double mappingValue) {
         m_stringDomainValue = stringDomValue;
         m_mappingValue = mappingValue;
+    }
+
+    /**
+     * Constructs a coordinate mapping from a string representation of the domain value and its mapping value.
+     *
+     * @param stringDomValue the domain value as a string
+     * @param mappingValue the corresponding mapping
+     * @param values the initial values
+     */
+    CoordinateMapping(final String stringDomValue, final double mappingValue, final DataValue... values) {
+        this(stringDomValue, mappingValue);
+        m_values = values;
     }
 
     /**

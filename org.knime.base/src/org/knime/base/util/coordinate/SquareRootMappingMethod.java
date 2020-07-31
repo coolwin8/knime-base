@@ -66,6 +66,7 @@ public class SquareRootMappingMethod implements MappingMethod {
     /**
      * {@inheritDoc}
      */
+    @Override
     public DataCell doMapping(final DataCell cell) {
         if (cell == null || cell.isMissing()
                 || !cell.getType().isCompatible(DoubleValue.class)) {
@@ -78,6 +79,7 @@ public class SquareRootMappingMethod implements MappingMethod {
     /**
      * {@inheritDoc}
      */
+    @Override
     public String getDisplayName() {
         return "sqrt(x)";
     }
@@ -85,6 +87,7 @@ public class SquareRootMappingMethod implements MappingMethod {
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean isCompatibleWithDomain(final DataColumnDomain domain) {
         if (domain == null || !domain.hasBounds()) {
             return false;
@@ -108,6 +111,7 @@ public class SquareRootMappingMethod implements MappingMethod {
     /**
      * {@inheritDoc}
      */
+    @Override
     public double getLabel(final DataCell cell) {
         if (cell == null || !cell.getType().isCompatible(DoubleValue.class)) {
             throw new IllegalArgumentException(
