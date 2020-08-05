@@ -53,10 +53,11 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.net.URL;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
-import java.util.Vector;
 
 import org.knime.core.data.DataCell;
 import org.knime.core.data.DataColumnDomainCreator;
@@ -84,8 +85,7 @@ import org.knime.core.util.tokenizer.TokenizerSettings;
 public class ARFFTable implements DataTable {
 
     /** The node logger fot this class. */
-    private static final NodeLogger LOGGER = NodeLogger
-            .getLogger(ARFFTable.class);
+    private static final NodeLogger LOGGER = NodeLogger.getLogger(ARFFTable.class);
 
     private final URL m_file;
 
@@ -94,18 +94,15 @@ public class ARFFTable implements DataTable {
     private final String m_rowPrefix;
 
     /**
-     * Create a new DataTable reading its content from an ARFF file at the
-     * specified location.
+     * Create a new DataTable reading its content from an ARFF file at the specified location.
      *
      * @param arffFileLocation valid URL which points to the ARFF file to read
      * @param tSpec the structure of the table to create
      * @param rowKeyPrefix row keys are constructed like rowKeyPrefix + lineNo
      */
-    public ARFFTable(final URL arffFileLocation, final DataTableSpec tSpec,
-            final String rowKeyPrefix) {
+    public ARFFTable(final URL arffFileLocation, final DataTableSpec tSpec, final String rowKeyPrefix) {
         if (arffFileLocation == null) {
-            throw new NullPointerException("Can't pass null ARFF "
-                    + "file location.");
+            throw new NullPointerException("Can't pass null ARFF " + "file location.");
         }
         if (tSpec == null) {
             throw new NullPointerException("Can't handle null table spec.");
@@ -136,8 +133,7 @@ public class ARFFTable implements DataTable {
     }
 
     /**
-     * Reads in the header of the specified ARFF file and returns a
-     * corresponding table spec object.
+     * Reads in the header of the specified ARFF file and returns a corresponding table spec object.
      *
      * @param fileLoc the location of the ARFF file to read
      * @param exec to enable users to cancel this process
@@ -146,161 +142,152 @@ public class ARFFTable implements DataTable {
      * @throws InvalidSettingsException if the file contains an invalid format
      * @throws CanceledExecutionException if user canceled
      */
-    public static DataTableSpec createDataTableSpecFromARFFfile(
-            final URL fileLoc, final ExecutionMonitor exec) throws IOException,
-            InvalidSettingsException, CanceledExecutionException {
+    public static DataTableSpec createDataTableSpecFromARFFfile(final URL fileLoc, final ExecutionMonitor exec)
+        throws IOException, InvalidSettingsException, CanceledExecutionException {
 
-        // create a tokenizer to read the header
-        InputStream inStream = FileUtil.openStreamWithTimeout(fileLoc);
-
-        Tokenizer tokenizer = new Tokenizer(new BufferedReader(
-                new InputStreamReader(inStream)));
-        // create tokenizer settings that will deliver us the attributes and
-        // arguments as tokens.
-        tokenizer.setSettings(getTokenizerHeaderSettings());
-        // prepare for creating a column spec for each "@attribute" read
-        Vector<DataColumnSpec> colSpecs = new Vector<DataColumnSpec>();
+        ArrayList<DataColumnSpec> colSpecs = new ArrayList<>();
         String tableName = null;
-        String token;
-        // now we collect the header information - until we see the EOF or
-        // the data section begins.
-        while (true) {
-            if (exec != null) {
-                exec.checkCanceled(); // throws exception if user canceled.
-            }
-            DataCell[] possVals = null;
-            DataType type;
-            token = tokenizer.nextToken();
-            if (token == null) {
-                throw new InvalidSettingsException("Incorrect/Incomplete "
-                        + "ARFF file. No data section found.");
-            }
-            if (token.length() == 0) {
-                // ignore empty lines
-                continue;
-            }
-            if (token.equalsIgnoreCase("@DATA")) {
-                // this starts the data section: we are done.
-                break;
-            }
-            if (token.equalsIgnoreCase("@ATTRIBUTE")) {
-                // defines a new data column
-                String colName = tokenizer.nextToken();
-                String colType = null;
-                if (tokenizer.lastTokenWasQuoted()
-                        && tokenizer.getLastQuoteBeginPattern().equals("{")) {
-                    // Weka allows the nominal value list to be appended without
-                    // a space delimiter. We will get it then hanging at the
-                    // name. Extract it from there and set it in the 'colType'
-                    if (colName.charAt(0) == '{') {
-                        // seems we only got a value list.
-                        // The col name must be empty/missing then...
-                        colType = colName;
-                        colName = null;
-                    } else {
-                        int openBraceIdx = colName.indexOf('{');
-                        int closeBraceIdx = colName.lastIndexOf('}');
-                        colType = colName.substring(openBraceIdx + 1,
-                                closeBraceIdx);
-                        colName = colName.substring(0, openBraceIdx);
-                        // we ignore everything after the nominal value list
+        // create a tokenizer to read the header
+        try (final InputStream inStream = FileUtil.openStreamWithTimeout(fileLoc)) {
+            try (final InputStreamReader inputStreamReader = new InputStreamReader(inStream, Charset.defaultCharset())) {
+                try (final BufferedReader reader = new BufferedReader(inputStreamReader)) {
+                    Tokenizer tokenizer = new Tokenizer(reader);
+                    // create tokenizer settings that will deliver us the attributes and
+                    // arguments as tokens.
+                    tokenizer.setSettings(getTokenizerHeaderSettings());
+                    // prepare for creating a column spec for each "@attribute" read
+                    String token;
+                    try {
+                        // now we collect the header information - until we see the EOF or
+                        // the data section begins.
+                        while (true) {
+                            if (exec != null) {
+                                exec.checkCanceled(); // throws exception if user canceled.
+                            }
+                            DataCell[] possVals = null;
+                            DataType type;
+                            token = tokenizer.nextToken();
+                            if (token == null) {
+                                throw new InvalidSettingsException(
+                                    "Incorrect/Incomplete " + "ARFF file. No data section found.");
+                            }
+                            if (token.length() == 0) {
+                                // ignore empty lines
+                                continue;
+                            }
+                            if (token.equalsIgnoreCase("@DATA")) {
+                                // this starts the data section: we are done.
+                                break;
+                            }
+                            if (token.equalsIgnoreCase("@ATTRIBUTE")) {
+                                // defines a new data column
+                                String colName = tokenizer.nextToken();
+                                String colType = null;
+                                if (tokenizer.lastTokenWasQuoted()
+                                    && tokenizer.getLastQuoteBeginPattern().equals("{")) {
+                                    // Weka allows the nominal value list to be appended without
+                                    // a space delimiter. We will get it then hanging at the
+                                    // name. Extract it from there and set it in the 'colType'
+                                    if (colName.charAt(0) == '{') {
+                                        // seems we only got a value list.
+                                        // The col name must be empty/missing then...
+                                        colType = colName;
+                                        colName = null;
+                                    } else {
+                                        int openBraceIdx = colName.indexOf('{');
+                                        int closeBraceIdx = colName.lastIndexOf('}');
+                                        colType = colName.substring(openBraceIdx + 1, closeBraceIdx);
+                                        colName = colName.substring(0, openBraceIdx);
+                                        // we ignore everything after the nominal value list
+                                    }
+                                } else {
+                                    colType = tokenizer.nextToken();
+                                }
+                                if ((colName == null) || (colType == null)) {
+                                    throw new InvalidSettingsException("Incomplete '@attribute' statement at line "
+                                        + tokenizer.getLineNumber() + " in ARFF file '" + fileLoc + "'.");
+                                }
+                                // make sure 'colType' is the last token we read before we
+                                // start the 'if' thing here.
+                                if (colType.equalsIgnoreCase("NUMERIC") || colType.equalsIgnoreCase("REAL")) {
+                                    type = DoubleCell.TYPE;
+                                    // ignore whatever still comes in that line, warn though
+                                    readUntilEOL(tokenizer, fileLoc.toString());
+                                } else if (colType.equalsIgnoreCase("INTEGER")) {
+                                    type = IntCell.TYPE;
+                                    // ignore whatever still comes in that line, warn though
+                                    readUntilEOL(tokenizer, fileLoc.toString());
+                                } else if (colType.equalsIgnoreCase("STRING")) {
+                                    type = StringCell.TYPE;
+                                    // ignore whatever still comes in that line, warn though
+                                    readUntilEOL(tokenizer, fileLoc.toString());
+                                } else if (colType.equalsIgnoreCase("DATE")) {
+                                    // we use string cell for date ...
+                                    type = StringCell.TYPE;
+                                    // ignore whatever date format is specified
+                                    readUntilEOL(tokenizer, null);
+                                } else if (tokenizer.lastTokenWasQuoted()
+                                    && tokenizer.getLastQuoteBeginPattern().equals("{")) {
+                                    // the braces should be still in the string
+                                    int openBraceIdx = colType.indexOf('{');
+                                    int closeBraceIdx = colType.lastIndexOf('}');
+                                    if ((openBraceIdx >= 0) && (closeBraceIdx > 0) && (openBraceIdx < closeBraceIdx)) {
+                                        colType = colType.substring(openBraceIdx + 1, closeBraceIdx);
+                                    }
+                                    // the type was a list of nominal values
+                                    possVals =
+                                        extractNominalVals(colType, fileLoc.toString(), tokenizer.getLineNumber());
+                                    // KNIME uses string cells for nominal values.
+                                    type = StringCell.TYPE;
+                                    readUntilEOL(tokenizer, fileLoc.toString());
+                                } else {
+                                    throw new InvalidSettingsException("Invalid column type" + " '" + colType
+                                        + "' in attribute control " + "statement in ARFF file '" + fileLoc
+                                        + "' at line " + tokenizer.getLineNumber() + ".");
+                                }
+                                DataColumnSpecCreator dcsc = new DataColumnSpecCreator(colName, type);
+                                if (possVals != null) {
+                                    dcsc.setDomain(new DataColumnDomainCreator(possVals).createDomain());
+                                }
+                                colSpecs.add(dcsc.createSpec());
+
+                            } else if (token.equalsIgnoreCase("@RELATION")) {
+                                tableName = tokenizer.nextToken();
+                                if (tableName == null) {
+                                    throw new InvalidSettingsException("Incomplete '@relation' statement at line "
+                                        + tokenizer.getLineNumber() + " in ARFF file '" + fileLoc + "'.");
+                                }
+                                // we just ignore the name of the data set.
+                                readUntilEOL(tokenizer, null);
+                            } else if (token.charAt(0) == '@') {
+                                // OOps. What's that?!?
+                                LOGGER.warn("ARFF reader WARNING: Unsupported control " + "statement '" + token
+                                    + "' in line " + tokenizer.getLineNumber() + ". Ignoring it! File: " + fileLoc);
+                                readUntilEOL(tokenizer, null);
+                            } else if (!token.equals("\n")) {
+                                LOGGER.warn("ARFF reader WARNING: Unsupported " + "statement '" + token
+                                    + "' in header of ARFF file '" + fileLoc + "', line " + tokenizer.getLineNumber()
+                                    + ". Ignoring it!");
+                                readUntilEOL(tokenizer, null);
+                            } // else ignore empty lines
+
+                        } // end of while (not EOF)
+
+                        // check uniqueness of column names
+                        HashSet<String> colNames = new HashSet<>();
+                        for (int c = 0; c < colSpecs.size(); c++) {
+                            if (!colNames.add(colSpecs.get(c).getName())) {
+                                throw new InvalidSettingsException(
+                                    "Two attributes with equal names defined in header of file '" + fileLoc + "'.");
+                            }
+                        }
+                    } finally {
+                        tokenizer.closeSourceStream();
                     }
-                } else {
-                    colType = tokenizer.nextToken();
                 }
-                if ((colName == null) || (colType == null)) {
-                    throw new InvalidSettingsException(
-                            "Incomplete '@attribute' statement at line "
-                                    + tokenizer.getLineNumber()
-                                    + " in ARFF file '" + fileLoc + "'.");
-                }
-                // make sure 'colType' is the last token we read before we
-                // start the 'if' thing here.
-                if (colType.equalsIgnoreCase("NUMERIC")
-                        || colType.equalsIgnoreCase("REAL")) {
-                    type = DoubleCell.TYPE;
-                    // ignore whatever still comes in that line, warn though
-                    readUntilEOL(tokenizer, fileLoc.toString());
-                } else if (colType.equalsIgnoreCase("INTEGER")) {
-                    type = IntCell.TYPE;
-                    // ignore whatever still comes in that line, warn though
-                    readUntilEOL(tokenizer, fileLoc.toString());
-                } else if (colType.equalsIgnoreCase("STRING")) {
-                    type = StringCell.TYPE;
-                    // ignore whatever still comes in that line, warn though
-                    readUntilEOL(tokenizer, fileLoc.toString());
-                } else if (colType.equalsIgnoreCase("DATE")) {
-                    // we use string cell for date ...
-                    type = StringCell.TYPE;
-                    // ignore whatever date format is specified
-                    readUntilEOL(tokenizer, null);
-                } else if (tokenizer.lastTokenWasQuoted()
-                        && tokenizer.getLastQuoteBeginPattern().equals("{")) {
-                    // the braces should be still in the string
-                    int openBraceIdx = colType.indexOf('{');
-                    int closeBraceIdx = colType.lastIndexOf('}');
-                    if ((openBraceIdx >= 0) && (closeBraceIdx > 0)
-                            && (openBraceIdx < closeBraceIdx)) {
-                        colType = colType.substring(openBraceIdx + 1,
-                                        closeBraceIdx);
-                    }
-                    // the type was a list of nominal values
-                    possVals = extractNominalVals(colType, fileLoc.toString(),
-                                    tokenizer.getLineNumber());
-                    // KNIME uses string cells for nominal values.
-                    type = StringCell.TYPE;
-                    readUntilEOL(tokenizer, fileLoc.toString());
-                } else {
-                    throw new InvalidSettingsException("Invalid column type"
-                            + " '" + colType + "' in attribute control "
-                            + "statement in ARFF file '" + fileLoc
-                            + "' at line " + tokenizer.getLineNumber() + ".");
-                }
-                DataColumnSpecCreator dcsc = new DataColumnSpecCreator(colName,
-                        type);
-                if (possVals != null) {
-                    dcsc.setDomain(new DataColumnDomainCreator(possVals)
-                            .createDomain());
-                }
-                colSpecs.add(dcsc.createSpec());
-
-            } else if (token.equalsIgnoreCase("@RELATION")) {
-                tableName = tokenizer.nextToken();
-                if (tableName == null) {
-                    throw new InvalidSettingsException(
-                            "Incomplete '@relation' statement at line "
-                                    + tokenizer.getLineNumber()
-                                    + " in ARFF file '" + fileLoc + "'.");
-                }
-                // we just ignore the name of the data set.
-                readUntilEOL(tokenizer, null);
-            } else if (token.charAt(0) == '@') {
-                // OOps. What's that?!?
-                LOGGER.warn("ARFF reader WARNING: Unsupported control "
-                        + "statement '" + token + "' in line "
-                        + tokenizer.getLineNumber() + ". Ignoring it! File: "
-                        + fileLoc);
-                readUntilEOL(tokenizer, null);
-            } else if (!token.equals("\n")) {
-                LOGGER.warn("ARFF reader WARNING: Unsupported " + "statement '"
-                        + token + "' in header of ARFF file '" + fileLoc
-                        + "', line " + tokenizer.getLineNumber()
-                        + ". Ignoring it!");
-                readUntilEOL(tokenizer, null);
-            } // else ignore empty lines
-
-        } // end of while (not EOF)
-
-        // check uniqueness of column names
-        HashSet<String> colNames = new HashSet<>();
-        for (int c = 0; c < colSpecs.size(); c++) {
-            if (!colNames.add(colSpecs.get(c).getName())) {
-                throw new InvalidSettingsException("Two attributes with equal names defined in header of file '"
-                        + fileLoc + "'.");
             }
         }
-        return new DataTableSpec(tableName, colSpecs
-                .toArray(new DataColumnSpec[colSpecs.size()]));
+        return new DataTableSpec(tableName, colSpecs.toArray(new DataColumnSpec[colSpecs.size()]));
     } // createDataTableSpecFromARFFfile(URL)
 
     /*
@@ -311,8 +298,8 @@ public class ARFFTable implements DataTable {
         // add the ARFF single line comment
         settings.addSingleLineCommentPattern("%", false, false);
         // LF is a row seperator - add it as delimiter
-        settings.addDelimiterPattern("\n", /* combine multiple= */true,
-        /* return as token= */true, /* include in token= */false);
+        settings.addDelimiterPattern("\n", /* combine multiple= */true, /* return as token= */true,
+            /* include in token= */false);
         // ARFF knows single and double quotes
         settings.addQuotePattern("'", "'");
         settings.addQuotePattern("\"", "\"");
@@ -337,9 +324,8 @@ public class ARFFTable implements DataTable {
      * tokenizer. It will leave the EOL at the end of the list in the tokenizer.
      * Pass in also file name for nice error messages.
      */
-    private static DataCell[] extractNominalVals(final String valList,
-            final String fileName, final int lineNo)
-            throws InvalidSettingsException {
+    private static DataCell[] extractNominalVals(final String valList, final String fileName, final int lineNo)
+        throws InvalidSettingsException {
 
         Collection<DataCell> vals = new LinkedHashSet<DataCell>();
 
@@ -352,8 +338,7 @@ public class ARFFTable implements DataTable {
         tokSets.addQuotePattern("\"", "\"");
         tokizer.setSettings(tokSets);
 
-        for (String val = tokizer.nextToken(); val != null; val = tokizer
-                .nextToken()) {
+        for (String val = tokizer.nextToken(); val != null; val = tokizer.nextToken()) {
 
             String newval = val;
             // trimm off any whitespaces.
@@ -366,10 +351,8 @@ public class ARFFTable implements DataTable {
             if (!vals.contains(newValCell)) {
                 vals.add(newValCell);
             } else {
-                LOGGER.warn("ARFF reader WARNING: The list of nominal "
-                        + "values in the header of file '" + fileName
-                        + "' line " + lineNo + " contains the value '" + newval
-                        + "' twice. Ignoring one appearance.");
+                LOGGER.warn("ARFF reader WARNING: The list of nominal " + "values in the header of file '" + fileName
+                    + "' line " + lineNo + " contains the value '" + newval + "' twice. Ignoring one appearance.");
             }
         }
         return vals.toArray(new DataCell[vals.size()]);
@@ -382,17 +365,15 @@ public class ARFFTable implements DataTable {
      * a flag to indicate that we are not really expecting anything and this
      * method will print a warning if the first token it reads is NOT the EOL.
      */
-    private static void readUntilEOL(final Tokenizer tizer,
-            final String filename) {
+    private static void readUntilEOL(final Tokenizer tizer, final String filename) {
         boolean msgPrinted = false;
         String token = tizer.nextToken();
 
         while ((token != null) && !token.equals("\n")) { // EOF is also EOL
             token = tizer.nextToken();
             if (!msgPrinted && (filename != null)) {
-                LOGGER.warn("ARFF reader WARNING: Ignoring extra "
-                        + "characters in header of file '" + filename
-                        + "' line " + tizer.getLineNumber() + ".");
+                LOGGER.warn("ARFF reader WARNING: Ignoring extra " + "characters in header of file '" + filename
+                    + "' line " + tizer.getLineNumber() + ".");
             }
         }
     }
