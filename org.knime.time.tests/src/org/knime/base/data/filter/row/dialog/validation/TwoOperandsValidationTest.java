@@ -56,7 +56,11 @@ import org.knime.core.data.def.StringCell;
 import org.mockito.Mock;
 
 @SuppressWarnings("javadoc")
-public class TwoOperandsValidationTest extends AbstractMultipleDateTimeOperandsValidationTest {
+public class TwoOperandsValidationTest extends MultipleDateTimeOperandsValidationTest {
+
+    private static final String HAS_ERRORS = "has errors";
+
+    private static final String NO_ERRORS = "no errors";
 
     @Mock
     private Operator m_operator;
@@ -77,13 +81,13 @@ public class TwoOperandsValidationTest extends AbstractMultipleDateTimeOperandsV
             validation.apply(new OperatorParameters(columnSpec, m_operator, new String[]{"abc", "def"}));
 
         // then
-        Assert.assertFalse("has errors", result.hasErrors());
+        Assert.assertFalse(HAS_ERRORS, result.hasErrors());
 
         // when values array is NULL
         result = validation.apply(new OperatorParameters(columnSpec, m_operator, null));
 
         // then
-        Assert.assertTrue("no errors", result.hasErrors());
+        Assert.assertTrue(NO_ERRORS, result.hasErrors());
         Assert.assertThat(result.getErrors(), Matchers.hasSize(1));
         Assert.assertThat(result.getErrors().get(0).getError(), Matchers.containsString("two value"));
 
@@ -91,7 +95,7 @@ public class TwoOperandsValidationTest extends AbstractMultipleDateTimeOperandsV
         result = validation.apply(new OperatorParameters(columnSpec, m_operator, new String[0]));
 
         // then
-        Assert.assertTrue("no errors", result.hasErrors());
+        Assert.assertTrue(NO_ERRORS, result.hasErrors());
         Assert.assertThat(result.getErrors(), Matchers.hasSize(1));
         Assert.assertThat(result.getErrors().get(0).getError(), Matchers.containsString("two value"));
 
@@ -99,7 +103,7 @@ public class TwoOperandsValidationTest extends AbstractMultipleDateTimeOperandsV
         result = validation.apply(new OperatorParameters(columnSpec, m_operator, new String[]{"abc"}));
 
         // then
-        Assert.assertTrue("no errors", result.hasErrors());
+        Assert.assertTrue(NO_ERRORS, result.hasErrors());
         Assert.assertThat(result.getErrors(), Matchers.hasSize(1));
         Assert.assertThat(result.getErrors().get(0).getError(), Matchers.containsString("two value"));
 
@@ -107,7 +111,7 @@ public class TwoOperandsValidationTest extends AbstractMultipleDateTimeOperandsV
         result = validation.apply(new OperatorParameters(columnSpec, m_operator, new String[]{"abc", "def", "xwz"}));
 
         // then
-        Assert.assertTrue("no errors", result.hasErrors());
+        Assert.assertTrue(NO_ERRORS, result.hasErrors());
         Assert.assertThat(result.getErrors(), Matchers.hasSize(1));
         Assert.assertThat(result.getErrors().get(0).getError(), Matchers.containsString("two value"));
     }

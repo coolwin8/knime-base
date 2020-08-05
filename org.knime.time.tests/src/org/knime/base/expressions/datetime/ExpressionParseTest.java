@@ -48,6 +48,7 @@ package org.knime.base.expressions.datetime;
 import static org.junit.Assert.fail;
 
 import org.junit.Test;
+import org.knime.core.node.NodeLogger;
 import org.knime.expressions.core.ExpressionUtils;
 import org.knime.expressions.core.exceptions.ScriptParseException;
 
@@ -57,7 +58,9 @@ import org.knime.expressions.core.exceptions.ScriptParseException;
  * @author Moritz Heine, KNIME GmbH, Konstanz, Germany
  *
  */
-final public class ExpressionParseTest {
+public final class ExpressionParseTest {
+
+    private static final NodeLogger LOGGER = NodeLogger.getLogger(ExpressionParseTest.class);
 
     private final String[] m_invalidIdentifiers = new String[]{"function date(){}", "date(date = 1, 1, 1)",
         "date = date(1,1,1)", "and = date(1,1,1)", "let date = 1", "function a(){let date = 1}", "1date = a", "*date",
@@ -69,7 +72,6 @@ final public class ExpressionParseTest {
             "let date1 = 1", "function a(){let date1 = 1}", "function Date(){}", "date(Date = 1, 1, 1)",
             "Date = date(1,1,1)", "And = date(1,1,1)", "let Date = 1", "function a(){let Date = 1}", "a.date()",
             "a.date", "date(a.date)", "a.a column(1)", "for(column(1); a < 2; a++ )", "\"column\"", "\"column a\""};
-
 
     /**
      * Tests parsing of identifiers. Identifiers that are also function names are disallowed as we don't allow
@@ -83,6 +85,7 @@ final public class ExpressionParseTest {
                 fail("Test passed even though it should fail. Expression: " + expression);
             } catch (ScriptParseException e) {
                 // Expected
+                LOGGER.debug(e);
             }
         }
 
@@ -92,6 +95,7 @@ final public class ExpressionParseTest {
 
             } catch (ScriptParseException e) {
                 fail(e.getMessage() + " Expression: " + expression);
+                LOGGER.debug(e);
             }
         }
     }

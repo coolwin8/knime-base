@@ -80,7 +80,7 @@ public class TwoDateTimeFieldPanelTest {
     }
 
     @Test
-    public void canSetCurrentDate_whenInitPanel_andNoValue() {
+    public void canSetCurrentDateWhenInitPanelAndNoValue() {
         // given
         when(m_parameters.getColumnSpec()).thenReturn(new ColumnSpec("date", LocalDateCellFactory.TYPE));
         when(m_parameters.getValues()).thenReturn(new String[0]);
@@ -96,7 +96,7 @@ public class TwoDateTimeFieldPanelTest {
     }
 
     @Test
-    public void canSetDate_whenInitPanel() {
+    public void canSetDateWhenInitPanel() {
         // given
         when(m_parameters.getColumnSpec()).thenReturn(new ColumnSpec("date", LocalDateCellFactory.TYPE));
         when(m_parameters.getValues()).thenReturn(new String[]{"2016-05-23", "2017-01-01"});
@@ -112,7 +112,7 @@ public class TwoDateTimeFieldPanelTest {
     }
 
     @Test
-    public void canSetDateTime_whenInitPanel() {
+    public void canSetDateTimeWhenInitPanel() {
         // given
         when(m_parameters.getColumnSpec()).thenReturn(new ColumnSpec("date_time", LocalDateTimeCellFactory.TYPE));
         when(m_parameters.getValues()).thenReturn(new String[]{"2016-05-23T06:30:00", "2018-02-13T15:12:20"});
@@ -128,7 +128,7 @@ public class TwoDateTimeFieldPanelTest {
     }
 
     @Test
-    public void canSetTime_whenInitPanel() {
+    public void canSetTimeWhenInitPanel() {
         // given
         when(m_parameters.getColumnSpec()).thenReturn(new ColumnSpec("time", LocalTimeCellFactory.TYPE));
         when(m_parameters.getValues()).thenReturn(new String[]{"04:10:00", "12:15:05"});

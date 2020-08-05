@@ -57,7 +57,7 @@ import org.knime.core.data.def.StringCell;
 import org.mockito.Mock;
 
 @SuppressWarnings("javadoc")
-public class MultipleOperandsValidationTest extends AbstractMultipleDateTimeOperandsValidationTest {
+public class MultipleOperandsValidationTest extends MultipleDateTimeOperandsValidationTest {
 
     @Mock
     private Operator m_operator;
@@ -67,15 +67,14 @@ public class MultipleOperandsValidationTest extends AbstractMultipleDateTimeOper
     }
 
     @Test
-    public void shouldFail_whenNoValuesProvided() {
+    public void shouldFailWhenNoValuesProvided() {
         // given
         final MultipleDateTimeOperandsValidation validation = new MultipleDateTimeOperandsValidation();
 
         final ColumnSpec columnSpec = new ColumnSpec("string", StringCell.TYPE);
 
         // when values array has a value
-        ValidationResult result =
-            validation.apply(new OperatorParameters(columnSpec, m_operator, new String[]{"abc"}));
+        ValidationResult result = validation.apply(new OperatorParameters(columnSpec, m_operator, new String[]{"abc"}));
 
         // then
         Assert.assertFalse("has errors", result.hasErrors());
@@ -88,5 +87,4 @@ public class MultipleOperandsValidationTest extends AbstractMultipleDateTimeOper
         MatcherAssert.assertThat(result.getErrors(), Matchers.hasSize(1));
         MatcherAssert.assertThat(result.getErrors().get(0).getError(), Matchers.containsString("one value"));
     }
-
 }

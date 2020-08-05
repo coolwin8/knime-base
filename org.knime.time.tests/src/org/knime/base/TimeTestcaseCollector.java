@@ -47,6 +47,8 @@
  */
 package org.knime.base;
 
+import java.io.IOException;
+
 import org.junit.runner.RunWith;
 import org.junit.runners.AllTests;
 import org.knime.testing.core.AbstractTestcaseCollector;
@@ -65,9 +67,10 @@ public class TimeTestcaseCollector extends AbstractTestcaseCollector {
      *
      * @return a test suite with all testcases
      *
-     * @throws Exception if something goes wrong
+     * @throws ClassNotFoundException if a class could not be found (which would be strange strange)
+     * @throws IOException if an I/O error occurs while collecting the classes
      */
-    public static TestSuite suite() throws Exception {
+    public static TestSuite suite() throws ClassNotFoundException, IOException {
         final TestSuite suite = new TestSuite();
 
         for (Class<?> testClass : new TimeTestcaseCollector().getUnittestsClasses()) {

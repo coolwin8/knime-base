@@ -59,10 +59,15 @@ import org.knime.core.data.def.DoubleCell;
 import org.knime.core.data.def.IntCell;
 import org.knime.core.data.def.LongCell;
 import org.knime.core.data.def.StringCell;
+import org.knime.core.node.NodeLogger;
 import org.knime.expressions.core.DefaultScriptRowInput;
 import org.knime.expressions.core.Expressions;
 import org.knime.expressions.core.FunctionScript;
 import org.knime.expressions.core.ScriptRowInput;
+import org.knime.expressions.core.exceptions.ScriptCompilationException;
+import org.knime.expressions.core.exceptions.ScriptConversionException;
+import org.knime.expressions.core.exceptions.ScriptExecutionException;
+import org.knime.expressions.core.exceptions.ScriptParseException;
 
 /**
  * TestCase to test execution of expressions.
@@ -71,6 +76,8 @@ import org.knime.expressions.core.ScriptRowInput;
  *
  */
 public class ExpressionCollectionTest {
+
+    private static final NodeLogger LOGGER = NodeLogger.getLogger(ExpressionCollectionTest.class);
 
     /**
      * Tests if simple conversion.
@@ -116,8 +123,10 @@ public class ExpressionCollectionTest {
             result = function.apply(new DefaultScriptRowInput(null, null, 0, 0));
 
             assertEquals(CollectionCellFactory.createListCell(Arrays.asList(new StringCell("0001-01-01"))), result);
-        } catch (Exception e) {
+        } catch (ScriptExecutionException | ScriptConversionException | ScriptParseException
+                | ScriptCompilationException e) {
             fail(e.getMessage());
+            LOGGER.debug(e);
         }
     }
 }

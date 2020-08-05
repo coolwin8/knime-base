@@ -65,6 +65,10 @@ import org.mockito.junit.MockitoRule;
 @SuppressWarnings("javadoc")
 public class SingleDateTimeOperandValidationTest {
 
+    private static final String HAS_ERRORS = "has errors";
+
+    private static final String NO_ERRORS = "no errors";
+
     private SingleDateTimeOperandValidation m_validation;
 
     @Mock
@@ -88,19 +92,19 @@ public class SingleDateTimeOperandValidationTest {
             m_validation.apply(new OperatorParameters(columnSpec, m_operator, new String[]{"2017-05-23"}));
 
         // then
-        Assert.assertFalse("has errors", result.hasErrors());
+        Assert.assertFalse(HAS_ERRORS, result.hasErrors());
 
         // when date value is OK but has spaces
         result = m_validation.apply(new OperatorParameters(columnSpec, m_operator, new String[]{" 2017-05-23 "}));
 
         // then
-        Assert.assertFalse("has errors", result.hasErrors());
+        Assert.assertFalse(HAS_ERRORS, result.hasErrors());
 
         // when couldn't parse date value
         result = m_validation.apply(new OperatorParameters(columnSpec, m_operator, new String[]{"2017-99-99"}));
 
         // then
-        Assert.assertTrue("no errors", result.hasErrors());
+        Assert.assertTrue(NO_ERRORS, result.hasErrors());
         Assert.assertThat(result.getErrors(), Matchers.hasSize(1));
         Assert.assertThat(result.getErrors().get(0).getError(), Matchers.containsString("convert to local date"));
     }
@@ -115,33 +119,33 @@ public class SingleDateTimeOperandValidationTest {
             m_validation.apply(new OperatorParameters(columnSpec, m_operator, new String[]{"2017-05-23T06:25:13"}));
 
         // then
-        Assert.assertFalse("has errors", result.hasErrors());
+        Assert.assertFalse(HAS_ERRORS, result.hasErrors());
 
         // when date&time value is OK without seconds
         result = m_validation.apply(new OperatorParameters(columnSpec, m_operator, new String[]{"2017-05-23T06:25"}));
 
         // then
-        Assert.assertFalse("has errors", result.hasErrors());
+        Assert.assertFalse(HAS_ERRORS, result.hasErrors());
 
         // when date&time with milliseconds is OK
         result =
             m_validation.apply(new OperatorParameters(columnSpec, m_operator, new String[]{"2017-05-23T06:25:13.450"}));
 
         // then
-        Assert.assertFalse("has errors", result.hasErrors());
+        Assert.assertFalse(HAS_ERRORS, result.hasErrors());
 
         // when date&time value is OK but has spaces
         result =
             m_validation.apply(new OperatorParameters(columnSpec, m_operator, new String[]{" 2017-05-23T06:25:13 "}));
 
         // then
-        Assert.assertFalse("has errors", result.hasErrors());
+        Assert.assertFalse(HAS_ERRORS, result.hasErrors());
 
         // when couldn't parse date & time value
         result = m_validation.apply(new OperatorParameters(columnSpec, m_operator, new String[]{"06:25:13"}));
 
         // then
-        Assert.assertTrue("no errors", result.hasErrors());
+        Assert.assertTrue(NO_ERRORS, result.hasErrors());
         MatcherAssert.assertThat(result.getErrors(), Matchers.hasSize(1));
         MatcherAssert.assertThat(result.getErrors().get(0).getError(),
             Matchers.containsString("convert to local date & time"));
@@ -157,26 +161,27 @@ public class SingleDateTimeOperandValidationTest {
             m_validation.apply(new OperatorParameters(columnSpec, m_operator, new String[]{"06:25:13"}));
 
         // then
-        Assert.assertFalse("has errors", result.hasErrors());
+        Assert.assertFalse(HAS_ERRORS, result.hasErrors());
 
         // when time value is OK without seconds
         result = m_validation.apply(new OperatorParameters(columnSpec, m_operator, new String[]{"06:25"}));
 
         // then
-        Assert.assertFalse("has errors", result.hasErrors());
+        Assert.assertFalse(HAS_ERRORS, result.hasErrors());
 
         // when time value is OK but has spaces
         result = m_validation.apply(new OperatorParameters(columnSpec, m_operator, new String[]{" 06:25:13 "}));
 
         // then
-        Assert.assertFalse("has errors", result.hasErrors());
+        Assert.assertFalse(HAS_ERRORS, result.hasErrors());
 
         // when couldn't parse time value
         result = m_validation.apply(new OperatorParameters(columnSpec, m_operator, new String[]{"abc"}));
 
         // then
-        Assert.assertTrue("no errors", result.hasErrors());
+        Assert.assertTrue(NO_ERRORS, result.hasErrors());
         MatcherAssert.assertThat(result.getErrors(), Matchers.hasSize(1));
-        MatcherAssert.assertThat(result.getErrors().get(0).getError(), Matchers.containsString("convert to local time"));
+        MatcherAssert.assertThat(result.getErrors().get(0).getError(),
+            Matchers.containsString("convert to local time"));
     }
 }

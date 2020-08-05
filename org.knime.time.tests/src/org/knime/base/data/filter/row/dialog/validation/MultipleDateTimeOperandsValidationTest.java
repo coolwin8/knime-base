@@ -63,7 +63,11 @@ import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
 @SuppressWarnings("javadoc")
-public abstract class AbstractMultipleDateTimeOperandsValidationTest {
+public class MultipleDateTimeOperandsValidationTest {
+
+    private static final String HAS_ERRORS = "has errors";
+
+    private static final String NO_ERRORS = "no errors";
 
     private OperatorValidation m_validation;
 
@@ -73,7 +77,7 @@ public abstract class AbstractMultipleDateTimeOperandsValidationTest {
     @Rule
     public MockitoRule m_mockitoRule = MockitoJUnit.rule();
 
-    protected AbstractMultipleDateTimeOperandsValidationTest(final OperatorValidation validation) {
+    protected MultipleDateTimeOperandsValidationTest(final OperatorValidation validation) {
         m_validation = validation;
     }
 
@@ -87,23 +91,25 @@ public abstract class AbstractMultipleDateTimeOperandsValidationTest {
             .apply(new OperatorParameters(columnSpec, m_operator, new String[]{"2017-05-23", "2019-01-15"}));
 
         // then
-        Assert.assertFalse("has errors", result.hasErrors());
+        Assert.assertFalse(HAS_ERRORS, result.hasErrors());
 
         // when date value are OK but have spaces
         result = m_validation.apply(
             new OperatorParameters(columnSpec, m_operator, new String[]{" 2017-05-23 ", " \t \n 2019-01-15  \t \n "}));
 
         // then
-        Assert.assertFalse("has errors", result.hasErrors());
+        Assert.assertFalse(HAS_ERRORS, result.hasErrors());
 
         // when couldn't parse date values
         result = m_validation.apply(new OperatorParameters(columnSpec, m_operator, new String[]{"2017-99-99", "abc"}));
 
         // then
-        Assert.assertTrue("no errors", result.hasErrors());
+        Assert.assertTrue(NO_ERRORS, result.hasErrors());
         MatcherAssert.assertThat(result.getErrors(), Matchers.hasSize(2));
-        MatcherAssert.assertThat(result.getErrors().get(0).getError(), Matchers.containsString("convert to local date"));
-        MatcherAssert.assertThat(result.getErrors().get(1).getError(), Matchers.containsString("convert to local date"));
+        MatcherAssert.assertThat(result.getErrors().get(0).getError(),
+            Matchers.containsString("convert to local date"));
+        MatcherAssert.assertThat(result.getErrors().get(1).getError(),
+            Matchers.containsString("convert to local date"));
     }
 
     @Test
@@ -116,24 +122,26 @@ public abstract class AbstractMultipleDateTimeOperandsValidationTest {
             new OperatorParameters(columnSpec, m_operator, new String[]{"2017-05-23T06:25", "2019-01-15T12:15:23"}));
 
         // then
-        Assert.assertFalse("has errors", result.hasErrors());
+        Assert.assertFalse(HAS_ERRORS, result.hasErrors());
 
         // when date&time values are OK but have spaces
         result = m_validation.apply(new OperatorParameters(columnSpec, m_operator,
             new String[]{" 2017-05-23T06:25 ", " \t \n 2019-01-15T12:15:23 \t \n "}));
 
         // then
-        Assert.assertFalse("has errors", result.hasErrors());
+        Assert.assertFalse(HAS_ERRORS, result.hasErrors());
 
         // when couldn't parse date&time values
         result =
             m_validation.apply(new OperatorParameters(columnSpec, m_operator, new String[]{"06:25:13", "11:45:53"}));
 
         // then
-        Assert.assertTrue("no errors", result.hasErrors());
+        Assert.assertTrue(NO_ERRORS, result.hasErrors());
         MatcherAssert.assertThat(result.getErrors(), Matchers.hasSize(2));
-        MatcherAssert.assertThat(result.getErrors().get(0).getError(), Matchers.containsString("convert to local date & time"));
-        MatcherAssert.assertThat(result.getErrors().get(1).getError(), Matchers.containsString("convert to local date & time"));
+        MatcherAssert.assertThat(result.getErrors().get(0).getError(),
+            Matchers.containsString("convert to local date & time"));
+        MatcherAssert.assertThat(result.getErrors().get(1).getError(),
+            Matchers.containsString("convert to local date & time"));
     }
 
     @Test
@@ -146,22 +154,24 @@ public abstract class AbstractMultipleDateTimeOperandsValidationTest {
             m_validation.apply(new OperatorParameters(columnSpec, m_operator, new String[]{"06:25", "09:15:43"}));
 
         // then
-        Assert.assertFalse("has errors", result.hasErrors());
+        Assert.assertFalse(HAS_ERRORS, result.hasErrors());
 
         // when time values are OK but have spaces
         result = m_validation
             .apply(new OperatorParameters(columnSpec, m_operator, new String[]{" 06:25 ", " \t \n 09:15:43 \t \n "}));
 
         // then
-        Assert.assertFalse("has errors", result.hasErrors());
+        Assert.assertFalse(HAS_ERRORS, result.hasErrors());
 
         // when couldn't parse time values
         result = m_validation.apply(new OperatorParameters(columnSpec, m_operator, new String[]{"abc", "06-25-13"}));
 
         // then
-        Assert.assertTrue("no errors", result.hasErrors());
+        Assert.assertTrue(NO_ERRORS, result.hasErrors());
         MatcherAssert.assertThat(result.getErrors(), Matchers.hasSize(2));
-        MatcherAssert.assertThat(result.getErrors().get(0).getError(), Matchers.containsString("convert to local time"));
-        MatcherAssert.assertThat(result.getErrors().get(1).getError(), Matchers.containsString("convert to local time"));
+        MatcherAssert.assertThat(result.getErrors().get(0).getError(),
+            Matchers.containsString("convert to local time"));
+        MatcherAssert.assertThat(result.getErrors().get(1).getError(),
+            Matchers.containsString("convert to local time"));
     }
 }
