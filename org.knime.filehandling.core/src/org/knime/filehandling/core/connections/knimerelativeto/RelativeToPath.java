@@ -63,7 +63,7 @@ import org.knime.filehandling.core.defaultnodesettings.KNIMEConnection.Type;
  * @noreference non-public API
  * @noinstantiate non-public API
  */
-public final class RelativeToPath extends UnixStylePath {
+public final class RelativeToPath extends UnixStylePath<RelativeToPath, BaseRelativeToFileSystem> {
 
     /**
      * Creates a path using a given file system and path parts.
@@ -79,7 +79,7 @@ public final class RelativeToPath extends UnixStylePath {
     public URI toKNIMEProtocolURI() {
         try {
 
-            final Type type = ((BaseRelativeToFileSystem)getFileSystem()).getType();
+            final Type type = getFileSystem().getType();
 
             switch (type) {
                 case MOUNTPOINT_RELATIVE:

@@ -62,7 +62,7 @@ import java.util.stream.Stream;
  * @noreference non-public API
  * @noextend non-public API
  */
-public abstract class BlobStorePath extends UnixStylePath {
+public class BlobStorePath<T extends BlobStorePath, FS extends BaseFileSystem<T>> extends UnixStylePath<T, FS> {
 
     private final boolean m_isDirectory;
 
@@ -77,7 +77,7 @@ public abstract class BlobStorePath extends UnixStylePath {
      * @param first The first name component.
      * @param more More name components.
      */
-    protected BlobStorePath(final BaseFileSystem<?> fileSystem, final String first, final String[] more) {
+    protected BlobStorePath(final FS fileSystem, final String first, final String[] more) {
         super(fileSystem, first, more);
         m_isDirectory =
             concatenatePathSegments(fileSystem.getSeparator(), first, more).endsWith(fileSystem.getSeparator())
@@ -199,7 +199,7 @@ public abstract class BlobStorePath extends UnixStylePath {
     @SuppressWarnings("resource")
     public BlobStorePath toDirectoryPath() {
         if (!isDirectory()) {
-            return (BlobStorePath)getFileSystem().getPath(toString(), getFileSystem().getSeparator());
+            return getFileSystem().getPath(toString(), getFileSystem().getSeparator());
         } else {
             return this;
         }

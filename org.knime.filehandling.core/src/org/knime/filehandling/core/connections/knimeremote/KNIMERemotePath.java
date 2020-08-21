@@ -63,7 +63,7 @@ import org.knime.filehandling.core.util.MountPointFileSystemAccessService;
  *
  * @author Tobias Urhaug, KNIME GmbH, Berlin, Germany
  */
-public final class KNIMERemotePath extends UnixStylePath {
+public final class KNIMERemotePath extends UnixStylePath<KNIMERemotePath, KNIMERemoteFileSystem> {
 
     /**
      * Constructs a {@code KNIMERemotePath} from a path string, or a sequence of strings that when joined form a path
@@ -85,11 +85,6 @@ public final class KNIMERemotePath extends UnixStylePath {
      */
     KNIMERemotePath(final KNIMERemoteFileSystem fileSystem, final URI uri) {
         super(fileSystem, uri.getPath());
-    }
-
-    @Override
-    public KNIMERemoteFileSystem getFileSystem() {
-        return (KNIMERemoteFileSystem) super.getFileSystem();
     }
 
     URI toKNIMEProtocolURI() {

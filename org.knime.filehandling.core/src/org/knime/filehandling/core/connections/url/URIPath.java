@@ -64,7 +64,7 @@ import org.knime.filehandling.core.connections.base.UnixStylePath;
  *
  * @author Bjoern Lohrmann, KNIME GmbH
  */
-public class URIPath extends UnixStylePath {
+public class URIPath extends UnixStylePath<URIPath, URIFileSystem> {
 
     private final URI m_uri;
 
@@ -113,11 +113,6 @@ public class URIPath extends UnixStylePath {
         return URI.create(baseURI + concatenatedPath.replace(" ", "%20"));
     }
 
-
-    @Override
-    public URIFileSystem getFileSystem() {
-        return (URIFileSystem) super.getFileSystem();
-    }
 
     @Override
     public URI toUri() {

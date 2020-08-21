@@ -76,7 +76,7 @@ import org.knime.filehandling.core.filechooser.NioFile;
  * @noreference non-public API
  * @noextend non-public API
  */
-public abstract class UnixStylePath extends FSPath {
+public class UnixStylePath<T extends UnixStylePath, FS extends BaseFileSystem<T>> extends FSPath {
 
     /** Constant for the to parent string */
     protected static final String TO_PARENT = "..";
@@ -88,7 +88,7 @@ public abstract class UnixStylePath extends FSPath {
     protected final ArrayList<String> m_pathParts;
 
     /** The file system the path belongs to */
-    protected final BaseFileSystem<? extends UnixStylePath> m_fileSystem;
+    protected final FS m_fileSystem;
 
     /** Whether the path is absolute */
     protected final boolean m_isAbsolute;
@@ -100,10 +100,10 @@ public abstract class UnixStylePath extends FSPath {
      * @param pathString path String
      */
     @SuppressWarnings({"unchecked", "resource"})
-    protected UnixStylePath(final BaseFileSystem<?> fileSystem, final String pathString) {
+    protected UnixStylePath(final FS fileSystem, final String pathString) {
         CheckUtils.checkNotNull(fileSystem, "FileSystem must not be null.");
         CheckUtils.checkNotNull(pathString, "Path string must not be null.");
-        m_fileSystem = (BaseFileSystem<? extends UnixStylePath>)fileSystem;
+        m_fileSystem = fileSystem;
         m_pathSeparator = m_fileSystem.getSeparator();
         m_isAbsolute = pathString.startsWith(m_pathSeparator);
         m_pathParts = getPathSplits(pathString);
@@ -116,7 +116,7 @@ public abstract class UnixStylePath extends FSPath {
      * @param first first part of the path
      * @param more subsequent parts of the path
      */
-    protected UnixStylePath(final BaseFileSystem<?> fileSystem, final String first, final String... more) {
+    protected UnixStylePath(final FS fileSystem, final String first, final String... more) {
         this(fileSystem, concatenatePathSegments(fileSystem.getSeparator(), first, more));
     }
 
@@ -161,14 +161,14 @@ public abstract class UnixStylePath extends FSPath {
     }
 
     @Override
-    public Stream<String> stringStream() {
+    public final Stream<String> stringStream() {
         // slightly more efficient than going from string to path and back to string,
         // as the super implementation would do
         return m_pathParts.stream();
     }
 
     @Override
-    public BaseFileSystem<? extends UnixStylePath> getFileSystem() {
+    public final FS getFileSystem() {
         return m_fileSystem;
     }
 
@@ -178,12 +178,12 @@ public abstract class UnixStylePath extends FSPath {
     }
 
     @Override
-    public Path getRoot() {
+    public final T getRoot() {
         return m_isAbsolute ? getFileSystem().getPath(m_pathSeparator) : null;
     }
 
     @Override
-    public Path getFileName() {
+    public final T getFileName() {
         if (m_pathParts.isEmpty()) {
             return null;
         }
@@ -191,7 +191,7 @@ public abstract class UnixStylePath extends FSPath {
     }
 
     @Override
-    public Path getParent() {
+    public final T getParent() {
         if ((m_isAbsolute && m_pathParts.isEmpty()) || (!m_isAbsolute && m_pathParts.size() <= 1)) {
             return null;
         }
@@ -209,7 +209,7 @@ public abstract class UnixStylePath extends FSPath {
     }
 
     @Override
-    public int getNameCount() {
+    public final int getNameCount() {
         return m_pathParts.size();
     }
 
@@ -217,7 +217,7 @@ public abstract class UnixStylePath extends FSPath {
      * {@inheritDoc}
      */
     @Override
-    public Path getName(final int index) {
+    public final T getName(final int index) {
         if (index < 0 || index >= m_pathParts.size()) {
             throw new IllegalArgumentException();
         }
@@ -229,7 +229,7 @@ public abstract class UnixStylePath extends FSPath {
      * {@inheritDoc}
      */
     @Override
-    public Path subpath(final int beginIndex, final int endIndex) {
+    public final T subpath(final int beginIndex, final int endIndex) {
 
         if (beginIndex >= endIndex || beginIndex < 0 || beginIndex >= m_pathParts.size()
             || endIndex > m_pathParts.size()) {
@@ -244,7 +244,7 @@ public abstract class UnixStylePath extends FSPath {
      * {@inheritDoc}
      */
     @Override
-    public boolean startsWith(final Path other) {
+    public final boolean startsWith(final Path other) {
         if (other.getFileSystem() != m_fileSystem) {
             return false;
         }
@@ -273,7 +273,7 @@ public abstract class UnixStylePath extends FSPath {
      * {@inheritDoc}
      */
     @Override
-    public boolean startsWith(final String other) {
+    public final boolean startsWith(final String other) {
         return startsWith(getFileSystem().getPath(other));
     }
 
@@ -281,7 +281,7 @@ public abstract class UnixStylePath extends FSPath {
      * {@inheritDoc}
      */
     @Override
-    public boolean endsWith(final Path other) {
+    public final boolean endsWith(final Path other) {
 
         if (other.getFileSystem() != m_fileSystem) {
             return false;
@@ -318,17 +318,18 @@ public abstract class UnixStylePath extends FSPath {
      * {@inheritDoc}
      */
     @Override
-    public boolean endsWith(final String other) {
+    public final boolean endsWith(final String other) {
         return endsWith(getFileSystem().getPath(other));
     }
 
     /**
      * {@inheritDoc}
      */
+    @SuppressWarnings("unchecked")
     @Override
-    public Path normalize() {
+    public final T normalize() {
         if (m_pathParts.isEmpty()) {
-            return this;
+            return (T) this;
         }
 
         final List<String> normalized = getNormalizedPathParts();
@@ -343,7 +344,7 @@ public abstract class UnixStylePath extends FSPath {
      * @return Returns a list of path parts from this path without redundant occurrences of "{@code .}" and
      *         "{@code ..}".
      */
-    protected List<String> getNormalizedPathParts() {
+    protected final List<String> getNormalizedPathParts() {
         final LinkedList<String> normalized = new LinkedList<>();
         boolean stepUp = true;
         for (final String pathComponent : m_pathParts) {
@@ -369,18 +370,19 @@ public abstract class UnixStylePath extends FSPath {
     /**
      * {@inheritDoc}
      */
+    @SuppressWarnings({"unchecked", "resource"})
     @Override
-    public Path resolve(final Path other) {
+    public final T resolve(final Path other) {
         if (other.getFileSystem() != m_fileSystem) {
             throw new IllegalArgumentException("Cannot resolve paths across different file systems");
         }
 
         if (other.isAbsolute()) {
-            return other;
+            return (T) other;
         }
 
         if (other.getNameCount() == 0) {
-            return this;
+            return (T)this;
         }
 
         return getFileSystem().getPath(toString(), other.toString());
@@ -390,28 +392,29 @@ public abstract class UnixStylePath extends FSPath {
      * {@inheritDoc}
      */
     @Override
-    public Path resolve(final String other) {
+    public final T resolve(final String other) {
         return resolve(getFileSystem().getPath(other));
     }
 
     /**
      * {@inheritDoc}
      */
+    @SuppressWarnings("unchecked")
     @Override
-    public Path resolveSibling(final Path other) {
+    public final T resolveSibling(final Path other) {
         if (other.getFileSystem() != m_fileSystem) {
             throw new IllegalArgumentException("Cannot resolve sibling paths across different file systems");
         }
 
         if (other.isAbsolute()) {
-            return other;
+            return (T)other;
         }
 
-        final Path parent = getParent();
+        final T parent = getParent();
         if (parent == null) {
-            return other;
+            return (T)other;
         } else {
-            return parent.resolve(other);
+            return (T)parent.resolve(other);
         }
     }
 
@@ -419,7 +422,7 @@ public abstract class UnixStylePath extends FSPath {
      * {@inheritDoc}
      */
     @Override
-    public Path resolveSibling(final String other) {
+    public final T resolveSibling(final String other) {
         return resolveSibling(getFileSystem().getPath(other));
     }
 
@@ -427,7 +430,7 @@ public abstract class UnixStylePath extends FSPath {
      * {@inheritDoc}
      */
     @Override
-    public Path relativize(final Path other) {
+    public final T relativize(final Path other) {
         if (other.getFileSystem() != m_fileSystem) {
             throw new IllegalArgumentException("Cannot relativize paths across different file systems");
         }
@@ -444,7 +447,7 @@ public abstract class UnixStylePath extends FSPath {
             throw new IllegalArgumentException("Unknown path implementation, only unix style path can be relativize.");
         }
 
-        UnixStylePath unixOther = (UnixStylePath) other;
+        T unixOther = (T) other;
 
         if (isEmptyPath()) {
             return unixOther;
@@ -455,7 +458,7 @@ public abstract class UnixStylePath extends FSPath {
         }
 
         if (unixOther.startsWith(this)) {
-            return unixOther.subpath(getNameCount(), unixOther.getNameCount());
+            return (T)unixOther.subpath(getNameCount(), unixOther.getNameCount());
         }
         if (this.startsWith(unixOther)) {
             final String[] toParentArray = new String[getNameCount() - unixOther.getNameCount() - 1];
@@ -469,7 +472,7 @@ public abstract class UnixStylePath extends FSPath {
             equalPathPartsCount++;
         }
 
-        unixOther = (UnixStylePath)unixOther.subpath(equalPathPartsCount, unixOther.getNameCount());
+        unixOther = (T)unixOther.subpath(equalPathPartsCount, unixOther.getNameCount());
 
         int r = 0;
         while (unixOther.m_pathParts.get(r).equals(TO_PARENT)) {
@@ -500,11 +503,11 @@ public abstract class UnixStylePath extends FSPath {
     }
 
     @Override
-    public Path toAbsolutePath() {
+    public final T toAbsolutePath() {
         if (m_isAbsolute) {
-            return this;
+            return (T)this;
         } else {
-            return getFileSystem().getWorkingDirectory().resolve(this);
+            return (T)getFileSystem().getWorkingDirectory().resolve(this);
         }
     }
 
@@ -512,15 +515,15 @@ public abstract class UnixStylePath extends FSPath {
      * {@inheritDoc}
      */
     @Override
-    public Path toRealPath(final LinkOption... options) throws IOException {
-        return toAbsolutePath().normalize();
+    public final T toRealPath(final LinkOption... options) throws IOException {
+        return (T)toAbsolutePath().normalize();
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public File toFile() {
+    public final File toFile() {
         return new NioFile(this);
     }
 
@@ -528,7 +531,7 @@ public abstract class UnixStylePath extends FSPath {
      * {@inheritDoc}
      */
     @Override
-    public WatchKey register(final WatchService watcher, final Kind<?>[] events, final Modifier... modifiers)
+    public final WatchKey register(final WatchService watcher, final Kind<?>[] events, final Modifier... modifiers)
         throws IOException {
         throw new UnsupportedOperationException();
     }
@@ -537,7 +540,7 @@ public abstract class UnixStylePath extends FSPath {
      * {@inheritDoc}
      */
     @Override
-    public WatchKey register(final WatchService watcher, final Kind<?>... events) throws IOException {
+    public final WatchKey register(final WatchService watcher, final Kind<?>... events) throws IOException {
         throw new UnsupportedOperationException();
     }
 
@@ -545,7 +548,7 @@ public abstract class UnixStylePath extends FSPath {
      * {@inheritDoc}
      */
     @Override
-    public Iterator<Path> iterator() {
+    public final Iterator<Path> iterator() {
         final ArrayList<Path> names = new ArrayList<>(getNameCount());
         for (int i = 0; i < getNameCount(); i++) {
             names.add(getName(i));
@@ -611,7 +614,7 @@ public abstract class UnixStylePath extends FSPath {
     }
 
     @Override
-    public String toString() {
+    public final String toString() {
         final String root = isAbsolute() ? m_pathSeparator : "";
         return root + String.join(m_pathSeparator, m_pathParts);
     }
@@ -619,14 +622,14 @@ public abstract class UnixStylePath extends FSPath {
     /**
      * @return whether this path is the root directory.
      */
-    public boolean isRoot() {
+    public final boolean isRoot() {
         return m_pathParts.isEmpty() && isAbsolute();
     }
 
     /**
      * @return whether this path is the empty path
      */
-    public boolean isEmptyPath() {
+    public final boolean isEmptyPath() {
         return !isAbsolute() && m_pathParts.size() == 1 && m_pathParts.get(0).isEmpty();
     }
 }
