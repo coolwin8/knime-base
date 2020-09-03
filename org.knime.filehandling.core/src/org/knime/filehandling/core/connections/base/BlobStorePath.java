@@ -48,7 +48,6 @@
  */
 package org.knime.filehandling.core.connections.base;
 
-import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -62,7 +61,7 @@ import java.util.stream.Stream;
  * @noreference non-public API
  * @noextend non-public API
  */
-public class BlobStorePath<T extends BlobStorePath, FS extends BaseFileSystem<T>> extends UnixStylePath<T, FS> {
+public class BlobStorePath<T extends BlobStorePath<T, FS>, FS extends BaseFileSystem<T>> extends UnixStylePath<T, FS> {
 
     private final boolean m_isDirectory;
 
@@ -95,7 +94,7 @@ public class BlobStorePath<T extends BlobStorePath, FS extends BaseFileSystem<T>
      * @param bucketName the bucket
      * @param blobName the object key
      */
-    protected BlobStorePath(final BaseFileSystem<?> fileSystem, final String bucketName, final String blobName) {
+    protected BlobStorePath(final FS fileSystem, final String bucketName, final String blobName) {
         super(fileSystem, fileSystem.getSeparator() + bucketName + fileSystem.getSeparator() + blobName);
         m_isDirectory = blobName.endsWith(fileSystem.getSeparator()) || lastComponentUsesRelativeNotation();
     }
@@ -129,11 +128,8 @@ public class BlobStorePath<T extends BlobStorePath, FS extends BaseFileSystem<T>
         return Arrays.stream(nameComponents);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public Path subpath(final int beginIndex, final int endIndex) {
+    public T subpath(final int beginIndex, final int endIndex) {
 
         if (beginIndex >= endIndex || beginIndex < 0 || beginIndex >= m_pathParts.size()
             || endIndex > m_pathParts.size()) {
@@ -197,7 +193,7 @@ public class BlobStorePath<T extends BlobStorePath, FS extends BaseFileSystem<T>
      * @return a {@link BlobStorePath} for which {@link #isDirectory()} returns true.
      */
     @SuppressWarnings("resource")
-    public BlobStorePath toDirectoryPath() {
+    public BlobStorePath<T, FS> toDirectoryPath() {
         if (!isDirectory()) {
             return getFileSystem().getPath(toString(), getFileSystem().getSeparator());
         } else {
@@ -217,14 +213,14 @@ public class BlobStorePath<T extends BlobStorePath, FS extends BaseFileSystem<T>
     }
 
     @Override
-    public Path getFileName() {
+    public T getFileName() {
         if (m_pathParts.isEmpty()) {
             return null;
         }
 
         String name = m_pathParts.get(m_pathParts.size() - 1);
         if (name.isEmpty()) {
-            return this;
+            return (T)this;
         }
 
         if (isDirectory()) {
@@ -235,7 +231,7 @@ public class BlobStorePath<T extends BlobStorePath, FS extends BaseFileSystem<T>
     }
 
     @Override
-    public Path getName(final int index) {
+    public T getName(final int index) {
         if (index < 0 || index >= m_pathParts.size()) {
             throw new IllegalArgumentException();
         }
@@ -248,9 +244,9 @@ public class BlobStorePath<T extends BlobStorePath, FS extends BaseFileSystem<T>
     }
 
     @Override
-    public Path normalize() {
+    public T normalize() {
         if (isRoot() || isEmptyPath()) {
-            return this;
+            return (T)this;
         }
 
         final List<String> normalized = getNormalizedPathParts();

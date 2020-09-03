@@ -55,13 +55,11 @@ import org.knime.filehandling.core.connections.base.UnixStylePath;
  *
  * @author Bjoern Lohrmann, KNIME GmbH
  */
-public class UnixStyleProxyPath extends UnixStylePath<UnixStyleProxyPath> {
+public class UnixStyleProxyPath<FS extends BaseFileSystem<UnixStyleProxyPath<FS>>>
+    extends UnixStylePath<UnixStyleProxyPath<FS>, FS> {
 
-    protected UnixStyleProxyPath(final BaseFileSystem<?> fileSystem, final String first, final String[] more) {
+    protected UnixStyleProxyPath(final FS fileSystem, final String first, final String[] more) {
         super(fileSystem, first, more);
     }
-
-
-
 
 }

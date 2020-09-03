@@ -146,7 +146,7 @@ public class URIPath extends UnixStylePath<URIPath, URIFileSystem> {
     }
 
     @Override
-    public Path normalize() {
+    public URIPath normalize() {
         // do not normalize URIPaths as this breaks URLs like knime://knime.workflow/../bla.csv,
         // which gets parsed into a relative path ../bla.csv. However, when trying to read this
         // file, the base file system does toAbsolutePath().normalize(), which results in /bla.csv

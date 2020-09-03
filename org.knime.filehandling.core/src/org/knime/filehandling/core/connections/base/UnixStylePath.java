@@ -76,7 +76,7 @@ import org.knime.filehandling.core.filechooser.NioFile;
  * @noreference non-public API
  * @noextend non-public API
  */
-public class UnixStylePath<T extends UnixStylePath, FS extends BaseFileSystem<T>> extends FSPath {
+public class UnixStylePath<T extends UnixStylePath<T, FS>, FS extends BaseFileSystem<T>> extends FSPath {
 
     /** Constant for the to parent string */
     protected static final String TO_PARENT = "..";
@@ -152,7 +152,6 @@ public class UnixStylePath<T extends UnixStylePath, FS extends BaseFileSystem<T>
             // special case: the empty path
             splitList.add("");
         } else {
-
             Arrays.stream(pathString.split(m_pathSeparator)) //
                 .filter(c -> !c.isEmpty()) //
                 .forEach(splitList::add);
@@ -161,7 +160,7 @@ public class UnixStylePath<T extends UnixStylePath, FS extends BaseFileSystem<T>
     }
 
     @Override
-    public final Stream<String> stringStream() {
+    public Stream<String> stringStream() {
         // slightly more efficient than going from string to path and back to string,
         // as the super implementation would do
         return m_pathParts.stream();
@@ -178,12 +177,12 @@ public class UnixStylePath<T extends UnixStylePath, FS extends BaseFileSystem<T>
     }
 
     @Override
-    public final T getRoot() {
+    public T getRoot() {
         return m_isAbsolute ? getFileSystem().getPath(m_pathSeparator) : null;
     }
 
     @Override
-    public final T getFileName() {
+    public T getFileName() {
         if (m_pathParts.isEmpty()) {
             return null;
         }
@@ -191,7 +190,7 @@ public class UnixStylePath<T extends UnixStylePath, FS extends BaseFileSystem<T>
     }
 
     @Override
-    public final T getParent() {
+    public T getParent() {
         if ((m_isAbsolute && m_pathParts.isEmpty()) || (!m_isAbsolute && m_pathParts.size() <= 1)) {
             return null;
         }
@@ -217,7 +216,7 @@ public class UnixStylePath<T extends UnixStylePath, FS extends BaseFileSystem<T>
      * {@inheritDoc}
      */
     @Override
-    public final T getName(final int index) {
+    public T getName(final int index) {
         if (index < 0 || index >= m_pathParts.size()) {
             throw new IllegalArgumentException();
         }
@@ -229,7 +228,7 @@ public class UnixStylePath<T extends UnixStylePath, FS extends BaseFileSystem<T>
      * {@inheritDoc}
      */
     @Override
-    public final T subpath(final int beginIndex, final int endIndex) {
+    public T subpath(final int beginIndex, final int endIndex) {
 
         if (beginIndex >= endIndex || beginIndex < 0 || beginIndex >= m_pathParts.size()
             || endIndex > m_pathParts.size()) {
@@ -327,9 +326,9 @@ public class UnixStylePath<T extends UnixStylePath, FS extends BaseFileSystem<T>
      */
     @SuppressWarnings("unchecked")
     @Override
-    public final T normalize() {
+    public T normalize() {
         if (m_pathParts.isEmpty()) {
-            return (T) this;
+            return (T)this;
         }
 
         final List<String> normalized = getNormalizedPathParts();
@@ -372,13 +371,13 @@ public class UnixStylePath<T extends UnixStylePath, FS extends BaseFileSystem<T>
      */
     @SuppressWarnings({"unchecked", "resource"})
     @Override
-    public final T resolve(final Path other) {
+    public T resolve(final Path other) {
         if (other.getFileSystem() != m_fileSystem) {
             throw new IllegalArgumentException("Cannot resolve paths across different file systems");
         }
 
         if (other.isAbsolute()) {
-            return (T) other;
+            return (T)other;
         }
 
         if (other.getNameCount() == 0) {
@@ -392,7 +391,7 @@ public class UnixStylePath<T extends UnixStylePath, FS extends BaseFileSystem<T>
      * {@inheritDoc}
      */
     @Override
-    public final T resolve(final String other) {
+    public T resolve(final String other) {
         return resolve(getFileSystem().getPath(other));
     }
 
@@ -401,7 +400,7 @@ public class UnixStylePath<T extends UnixStylePath, FS extends BaseFileSystem<T>
      */
     @SuppressWarnings("unchecked")
     @Override
-    public final T resolveSibling(final Path other) {
+    public T resolveSibling(final Path other) {
         if (other.getFileSystem() != m_fileSystem) {
             throw new IllegalArgumentException("Cannot resolve sibling paths across different file systems");
         }
@@ -410,11 +409,11 @@ public class UnixStylePath<T extends UnixStylePath, FS extends BaseFileSystem<T>
             return (T)other;
         }
 
-        final T parent = getParent();
+        T parent = getParent();
         if (parent == null) {
             return (T)other;
         } else {
-            return (T)parent.resolve(other);
+            return parent.resolve(other);
         }
     }
 
@@ -422,7 +421,7 @@ public class UnixStylePath<T extends UnixStylePath, FS extends BaseFileSystem<T>
      * {@inheritDoc}
      */
     @Override
-    public final T resolveSibling(final String other) {
+    public T resolveSibling(final String other) {
         return resolveSibling(getFileSystem().getPath(other));
     }
 
@@ -430,7 +429,7 @@ public class UnixStylePath<T extends UnixStylePath, FS extends BaseFileSystem<T>
      * {@inheritDoc}
      */
     @Override
-    public final T relativize(final Path other) {
+    public T relativize(final Path other) {
         if (other.getFileSystem() != m_fileSystem) {
             throw new IllegalArgumentException("Cannot relativize paths across different file systems");
         }
@@ -447,7 +446,7 @@ public class UnixStylePath<T extends UnixStylePath, FS extends BaseFileSystem<T>
             throw new IllegalArgumentException("Unknown path implementation, only unix style path can be relativize.");
         }
 
-        T unixOther = (T) other;
+        T unixOther = (T)other;
 
         if (isEmptyPath()) {
             return unixOther;
@@ -458,7 +457,7 @@ public class UnixStylePath<T extends UnixStylePath, FS extends BaseFileSystem<T>
         }
 
         if (unixOther.startsWith(this)) {
-            return (T)unixOther.subpath(getNameCount(), unixOther.getNameCount());
+            return unixOther.subpath(getNameCount(), unixOther.getNameCount());
         }
         if (this.startsWith(unixOther)) {
             final String[] toParentArray = new String[getNameCount() - unixOther.getNameCount() - 1];
@@ -472,7 +471,7 @@ public class UnixStylePath<T extends UnixStylePath, FS extends BaseFileSystem<T>
             equalPathPartsCount++;
         }
 
-        unixOther = (T)unixOther.subpath(equalPathPartsCount, unixOther.getNameCount());
+        unixOther = unixOther.subpath(equalPathPartsCount, unixOther.getNameCount());
 
         int r = 0;
         while (unixOther.m_pathParts.get(r).equals(TO_PARENT)) {
@@ -496,18 +495,19 @@ public class UnixStylePath<T extends UnixStylePath, FS extends BaseFileSystem<T>
     @Override
     public URI toUri() {
         try {
-            return new URI(m_fileSystem.getSchemeString(), m_fileSystem.getHostString(), toAbsolutePath().toString(), null);
+            return new URI(m_fileSystem.getSchemeString(), m_fileSystem.getHostString(), toAbsolutePath().toString(),
+                null);
         } catch (URISyntaxException ex) {
             throw new IllegalArgumentException(ex);
         }
     }
 
     @Override
-    public final T toAbsolutePath() {
+    public T toAbsolutePath() {
         if (m_isAbsolute) {
             return (T)this;
         } else {
-            return (T)getFileSystem().getWorkingDirectory().resolve(this);
+            return getFileSystem().getWorkingDirectory().resolve(this);
         }
     }
 
@@ -515,8 +515,8 @@ public class UnixStylePath<T extends UnixStylePath, FS extends BaseFileSystem<T>
      * {@inheritDoc}
      */
     @Override
-    public final T toRealPath(final LinkOption... options) throws IOException {
-        return (T)toAbsolutePath().normalize();
+    public T toRealPath(final LinkOption... options) throws IOException {
+        return toAbsolutePath().normalize();
     }
 
     /**
@@ -614,7 +614,7 @@ public class UnixStylePath<T extends UnixStylePath, FS extends BaseFileSystem<T>
     }
 
     @Override
-    public final String toString() {
+    public String toString() {
         final String root = isAbsolute() ? m_pathSeparator : "";
         return root + String.join(m_pathSeparator, m_pathParts);
     }
