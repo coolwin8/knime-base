@@ -55,7 +55,6 @@ import java.net.URLConnection;
 import java.nio.file.Path;
 
 import org.knime.core.util.FileUtil;
-import org.knime.filehandling.core.connections.FSFileSystem;
 import org.knime.filehandling.core.connections.FSLocation;
 import org.knime.filehandling.core.connections.base.UnixStylePath;
 
@@ -198,9 +197,8 @@ public class URIPath extends UnixStylePath<URIPath, URIFileSystem> {
     @SuppressWarnings("resource")
     @Override
     public FSLocation toFSLocation() {
-        final FSFileSystem<?> fs = getFileSystem();
+        final URIFileSystem fs = getFileSystem();
         return new FSLocation(fs.getFileSystemCategory(), //
-            fs.getFileSystemSpecifier().orElseGet(() -> null),
-            m_uri.toString());
+            fs.getFileSystemSpecifier().orElseGet(() -> null), m_uri.toString());
     }
 }

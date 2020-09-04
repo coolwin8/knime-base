@@ -73,10 +73,12 @@ import org.knime.filehandling.core.filechooser.NioFile;
  * Base implementation for unix style paths.
  *
  * @author Mareike Hoeger, KNIME GmbH
+ * @param <T> The actual type of the UnixStylePath
+ * @param <F> The actual type of the {@link BaseFileSystem}
  * @noreference non-public API
  * @noextend non-public API
  */
-public class UnixStylePath<T extends UnixStylePath<T, FS>, FS extends BaseFileSystem<T>> extends FSPath {
+public class UnixStylePath<T extends UnixStylePath<T, F>, F extends BaseFileSystem<T>> implements FSPath {
 
     /** Constant for the to parent string */
     protected static final String TO_PARENT = "..";
@@ -88,7 +90,7 @@ public class UnixStylePath<T extends UnixStylePath<T, FS>, FS extends BaseFileSy
     protected final ArrayList<String> m_pathParts;
 
     /** The file system the path belongs to */
-    protected final FS m_fileSystem;
+    protected final F m_fileSystem;
 
     /** Whether the path is absolute */
     protected final boolean m_isAbsolute;
@@ -100,7 +102,7 @@ public class UnixStylePath<T extends UnixStylePath<T, FS>, FS extends BaseFileSy
      * @param pathString path String
      */
     @SuppressWarnings({"unchecked", "resource"})
-    protected UnixStylePath(final FS fileSystem, final String pathString) {
+    protected UnixStylePath(final F fileSystem, final String pathString) {
         CheckUtils.checkNotNull(fileSystem, "FileSystem must not be null.");
         CheckUtils.checkNotNull(pathString, "Path string must not be null.");
         m_fileSystem = fileSystem;
@@ -116,7 +118,7 @@ public class UnixStylePath<T extends UnixStylePath<T, FS>, FS extends BaseFileSy
      * @param first first part of the path
      * @param more subsequent parts of the path
      */
-    protected UnixStylePath(final FS fileSystem, final String first, final String... more) {
+    protected UnixStylePath(final F fileSystem, final String first, final String... more) {
         this(fileSystem, concatenatePathSegments(fileSystem.getSeparator(), first, more));
     }
 
@@ -167,7 +169,7 @@ public class UnixStylePath<T extends UnixStylePath<T, FS>, FS extends BaseFileSy
     }
 
     @Override
-    public final FS getFileSystem() {
+    public final F getFileSystem() {
         return m_fileSystem;
     }
 

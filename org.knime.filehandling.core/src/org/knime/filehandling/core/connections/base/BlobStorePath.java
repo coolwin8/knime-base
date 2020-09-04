@@ -58,10 +58,12 @@ import java.util.stream.Stream;
  * directory or not (see {@link #isDirectory()}.
  *
  * @author Mareike Hoeger, KNIME GmbH
+ * @param <T> The actual type of the BlobStorePath
+ * @param <F> The actual type of the {@link BaseFileSystem}
  * @noreference non-public API
  * @noextend non-public API
  */
-public class BlobStorePath<T extends BlobStorePath<T, FS>, FS extends BaseFileSystem<T>> extends UnixStylePath<T, FS> {
+public class BlobStorePath<T extends BlobStorePath<T, F>, F extends BaseFileSystem<T>> extends UnixStylePath<T, F> {
 
     private final boolean m_isDirectory;
 
@@ -76,7 +78,7 @@ public class BlobStorePath<T extends BlobStorePath<T, FS>, FS extends BaseFileSy
      * @param first The first name component.
      * @param more More name components.
      */
-    protected BlobStorePath(final FS fileSystem, final String first, final String[] more) {
+    protected BlobStorePath(final F fileSystem, final String first, final String[] more) {
         super(fileSystem, first, more);
         m_isDirectory =
             concatenatePathSegments(fileSystem.getSeparator(), first, more).endsWith(fileSystem.getSeparator())
@@ -94,7 +96,7 @@ public class BlobStorePath<T extends BlobStorePath<T, FS>, FS extends BaseFileSy
      * @param bucketName the bucket
      * @param blobName the object key
      */
-    protected BlobStorePath(final FS fileSystem, final String bucketName, final String blobName) {
+    protected BlobStorePath(final F fileSystem, final String bucketName, final String blobName) {
         super(fileSystem, fileSystem.getSeparator() + bucketName + fileSystem.getSeparator() + blobName);
         m_isDirectory = blobName.endsWith(fileSystem.getSeparator()) || lastComponentUsesRelativeNotation();
     }
@@ -128,6 +130,7 @@ public class BlobStorePath<T extends BlobStorePath<T, FS>, FS extends BaseFileSy
         return Arrays.stream(nameComponents);
     }
 
+    @SuppressWarnings("resource")
     @Override
     public T subpath(final int beginIndex, final int endIndex) {
 
@@ -167,7 +170,7 @@ public class BlobStorePath<T extends BlobStorePath<T, FS>, FS extends BaseFileSy
         if (m_pathParts.size() <= 1) {
             return null;
         } else {
-            return subpath(1, getNameCount()).toString().toString();
+            return subpath(1, getNameCount()).toString();
         }
     }
 
@@ -193,7 +196,7 @@ public class BlobStorePath<T extends BlobStorePath<T, FS>, FS extends BaseFileSy
      * @return a {@link BlobStorePath} for which {@link #isDirectory()} returns true.
      */
     @SuppressWarnings("resource")
-    public BlobStorePath<T, FS> toDirectoryPath() {
+    public BlobStorePath<T, F> toDirectoryPath() {
         if (!isDirectory()) {
             return getFileSystem().getPath(toString(), getFileSystem().getSeparator());
         } else {
@@ -212,6 +215,7 @@ public class BlobStorePath<T extends BlobStorePath<T, FS>, FS extends BaseFileSy
         return toString;
     }
 
+    @SuppressWarnings({"unchecked", "resource"})
     @Override
     public T getFileName() {
         if (m_pathParts.isEmpty()) {
@@ -230,6 +234,7 @@ public class BlobStorePath<T extends BlobStorePath<T, FS>, FS extends BaseFileSy
         return getFileSystem().getPath(name);
     }
 
+    @SuppressWarnings("resource")
     @Override
     public T getName(final int index) {
         if (index < 0 || index >= m_pathParts.size()) {
@@ -243,6 +248,7 @@ public class BlobStorePath<T extends BlobStorePath<T, FS>, FS extends BaseFileSy
         return getFileSystem().getPath(name);
     }
 
+    @SuppressWarnings({"unchecked", "resource"})
     @Override
     public T normalize() {
         if (isRoot() || isEmptyPath()) {

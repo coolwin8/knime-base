@@ -49,7 +49,7 @@
 package org.knime.filehandling.core.connections;
 
 import java.nio.file.Path;
-import java.util.Arrays;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 /**
@@ -61,10 +61,10 @@ import java.util.stream.Stream;
  * @noextend non-public API
  * @noinstantiate non-public API
  */
-public abstract class FSPath implements Path {
+public interface FSPath extends Path {
 
     @Override
-    public abstract FSFileSystem<? extends FSPath> getFileSystem();
+    public FSFileSystem<? extends FSPath> getFileSystem();
 
     /**
      * Creates a {@link Stream} over the name components of this path, that result from invoking {@link #toString()} on
@@ -72,8 +72,8 @@ public abstract class FSPath implements Path {
      *
      * @return a {@link Stream} over the stringified name components of this path.
      */
-    public Stream<String> stringStream() {
-        return pathStream().map((p) -> p.toString());
+    public default Stream<String> stringStream() {
+        return pathStream().map(Path::toString);
     }
 
     /**
@@ -81,12 +81,9 @@ public abstract class FSPath implements Path {
      *
      * @return a {@link Stream} over the name components of this path.
      */
-    public Stream<Path> pathStream() {
-        final Path[] paths = new Path[getNameCount()];
-        for (int i = 0; i < getNameCount(); i++) {
-            paths[i] = getName(i);
-        }
-        return Arrays.stream(paths);
+    public default Stream<Path> pathStream() {
+        return IntStream.range(0, getNameCount())//
+            .mapToObj(this::getName);
     }
 
     /**
@@ -96,8 +93,8 @@ public abstract class FSPath implements Path {
      * @see FSFileSystem#getPath(FSLocation)
      */
     @SuppressWarnings("resource")
-    public FSLocation toFSLocation() {
-        final FSFileSystem<?> fs = getFileSystem();
+    public default FSLocation toFSLocation() {
+        final FSFileSystem<? extends FSPath> fs = getFileSystem();
         return new FSLocation(fs.getFileSystemCategory().toString(), fs.getFileSystemSpecifier().orElseGet(() -> null),
             toString());
     }
