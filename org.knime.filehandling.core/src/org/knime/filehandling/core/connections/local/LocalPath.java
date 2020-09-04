@@ -60,6 +60,7 @@ import java.nio.file.WatchEvent.Modifier;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.util.Iterator;
+import java.util.stream.Stream;
 
 import org.knime.filehandling.core.connections.FSPath;
 
@@ -321,5 +322,10 @@ public class LocalPath implements FSPath {
     @Override
     public int hashCode() {
         return m_wrappedPath.hashCode();
+    }
+
+    @Override
+    public Stream<String> stringStream() {
+        return pathStream().map(Path::toString);
     }
 }

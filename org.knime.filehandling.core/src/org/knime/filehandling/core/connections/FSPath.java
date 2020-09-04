@@ -53,8 +53,9 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 /**
- * Abstract super class for implemented by all NIO file systems in KNIME to represent paths. This class adds conversion
- * to {@link FSLocation} (see {@link #toFSLocation()}.
+ * Interface class that must be implemented by all NIO file systems in KNIME to represent paths. This interface adds
+ * default methods for the conversion to {@link FSLocation} (see {@link #toFSLocation()} and the creation of
+ * {@link Path} streams (see {@link #pathStream()}).
  *
  * @author Bjoern Lohrmann, KNIME GmbH
  * @noreference non-public API
@@ -67,19 +68,17 @@ public interface FSPath extends Path {
     public FSFileSystem<? extends FSPath> getFileSystem();
 
     /**
-     * Creates a {@link Stream} over the name components of this path, that result from invoking {@link #toString()} on
+     * Creates a {@link Stream} over the component names of this path, that result from invoking {@link #toString()} on
      * each of them.
      *
-     * @return a {@link Stream} over the stringified name components of this path.
+     * @return a {@link Stream} over the component names of this path.
      */
-    public default Stream<String> stringStream() {
-        return pathStream().map(Path::toString);
-    }
+    public Stream<String> stringStream();
 
     /**
-     * Creates a {@link Stream} over the name components of this path.
+     * Creates a {@link Stream} over the component names of this path.
      *
-     * @return a {@link Stream} over the name components of this path.
+     * @return a {@link Stream} over the component names of this path.
      */
     public default Stream<Path> pathStream() {
         return IntStream.range(0, getNameCount())//
