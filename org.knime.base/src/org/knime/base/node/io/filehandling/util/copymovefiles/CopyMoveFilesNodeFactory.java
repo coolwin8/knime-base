@@ -67,7 +67,6 @@ import org.knime.filehandling.core.port.FileSystemPortObject;
 /**
  * Node factory of the Copy/Move Files node.
  *
- * @author Simon Schmid, KNIME GmbH, Konstanz, Germany
  * @author Lars Schweikardt, KNIME GmbH, Konstanz, Germany
  */
 public final class CopyMoveFilesNodeFactory extends ConfigurableNodeFactory<CopyMoveFilesNodeModel> {
@@ -76,21 +75,33 @@ public final class CopyMoveFilesNodeFactory extends ConfigurableNodeFactory<Copy
     protected Optional<PortsConfigurationBuilder> createPortsConfigBuilder() {
         final PortsConfigurationBuilder b = new PortsConfigurationBuilder();
         b.addOptionalInputPortGroup(CopyMoveFilesNodeModel.CONNECTION_SOURCE_PORT_GRP_NAME, FileSystemPortObject.TYPE);
-        b.addOptionalInputPortGroup(CopyMoveFilesNodeModel.CONNECTION_DESTINATION_PORT_GRP_NAME, FileSystemPortObject.TYPE);
+        //TODO comes with AP-14932
+        b.addOptionalInputPortGroup(CopyMoveFilesNodeModel.TABLE_PORT_GRP_NAME, BufferedDataTable.TYPE);
+        b.addOptionalInputPortGroup(CopyMoveFilesNodeModel.CONNECTION_DESTINATION_PORT_GRP_NAME,
+            FileSystemPortObject.TYPE);
+
         b.addFixedOutputPortGroup("Output", BufferedDataTable.TYPE);
         return Optional.of(b);
     }
 
     @Override
     protected CopyMoveFilesNodeModel createNodeModel(final NodeCreationConfiguration creationConfig) {
-        PortsConfiguration portsConfiguration = creationConfig.getPortConfig().orElseThrow(IllegalStateException::new);
-        return new CopyMoveFilesNodeModel(portsConfiguration, createSettings(portsConfiguration));
+        final PortsConfiguration portsConfiguration =
+            creationConfig.getPortConfig().orElseThrow(IllegalStateException::new);
+        //TODO comes with AP-14932
+        final int[] tableIdx =
+            portsConfiguration.getInputPortLocation().get(CopyMoveFilesNodeModel.TABLE_PORT_GRP_NAME);
+        final CopyExecutionFactory executionfactory =
+            tableIdx == null ? new FileChooserCopyExecutionFactory() : new TableCopyExecutionFactory(tableIdx[0]);
+
+        return new CopyMoveFilesNodeModel(portsConfiguration, createSettings(portsConfiguration), executionfactory);
     }
 
     @Override
     protected NodeDialogPane createNodeDialogPane(final NodeCreationConfiguration creationConfig) {
         return new CopyMoveFilesNodeDialog(
-            createSettings(creationConfig.getPortConfig().orElseThrow(IllegalStateException::new)));
+            createSettings(creationConfig.getPortConfig().orElseThrow(IllegalStateException::new)),
+            creationConfig.getPortConfig().orElseThrow(IllegalStateException::new));
     }
 
     @Override
@@ -114,7 +125,8 @@ public final class CopyMoveFilesNodeFactory extends ConfigurableNodeFactory<Copy
             new SettingsModelReaderFileChooser("sourceFileChooser", portsConfiguration,
                 CopyMoveFilesNodeModel.CONNECTION_SOURCE_PORT_GRP_NAME, FilterMode.FILE),
             new SettingsModelWriterFileChooser("destinationFileChooser", portsConfiguration,
-                CopyMoveFilesNodeModel.CONNECTION_DESTINATION_PORT_GRP_NAME, FilterMode.FOLDER, FileOverwritePolicy.IGNORE,
+                CopyMoveFilesNodeModel.CONNECTION_DESTINATION_PORT_GRP_NAME, FilterMode.FOLDER,
+                FileOverwritePolicy.IGNORE,
                 EnumSet.of(FileOverwritePolicy.FAIL, FileOverwritePolicy.OVERWRITE, FileOverwritePolicy.IGNORE),
                 EnumSet.of(FSCategory.LOCAL, FSCategory.MOUNTPOINT, FSCategory.RELATIVE)));
     }

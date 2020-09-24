@@ -57,14 +57,19 @@ import javax.swing.JPanel;
 
 import org.knime.base.node.io.filehandling.util.IncludeParentFolderAvailableSwingWorker;
 import org.knime.base.node.io.filehandling.util.SwingWorkerManager;
+import org.knime.core.data.DataColumnSpec;
 import org.knime.core.node.FlowVariableModel;
 import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.NodeDialogPane;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
 import org.knime.core.node.NotConfigurableException;
+import org.knime.core.node.context.ports.PortsConfiguration;
 import org.knime.core.node.defaultnodesettings.DialogComponentBoolean;
+import org.knime.core.node.defaultnodesettings.DialogComponentColumnNameSelection;
 import org.knime.core.node.port.PortObjectSpec;
+import org.knime.core.node.util.ColumnFilter;
+import org.knime.filehandling.core.data.location.FSLocationValue;
 import org.knime.filehandling.core.data.location.variable.FSLocationVariableType;
 import org.knime.filehandling.core.defaultnodesettings.filechooser.reader.DialogComponentReaderFileChooser;
 import org.knime.filehandling.core.defaultnodesettings.filechooser.reader.SettingsModelReaderFileChooser;
@@ -81,6 +86,10 @@ final class CopyMoveFilesNodeDialog extends NodeDialogPane {
 
     private final DialogComponentReaderFileChooser m_sourceFilePanel;
 
+    //    private final DialogComponentColumnNameSelection m_selectedDestinationColumn;
+
+    private final DialogComponentColumnNameSelection m_selectedSourceColumn;
+
     private final DialogComponentWriterFileChooser m_destinationFilePanel;
 
     private final DialogComponentBoolean m_deleteSourceFilesCheckbox;
@@ -94,7 +103,7 @@ final class CopyMoveFilesNodeDialog extends NodeDialogPane {
      *
      * @param config the CopyMoveFilesNodeConfig
      */
-    CopyMoveFilesNodeDialog(final CopyMoveFilesNodeConfig config) {
+    CopyMoveFilesNodeDialog(final CopyMoveFilesNodeConfig config, final PortsConfiguration portsConfiguration) {
         final SettingsModelReaderFileChooser sourceFileChooserConfig = config.getSourceFileChooserModel();
         final SettingsModelWriterFileChooser destinationFileChooserConfig = config.getDestinationFileChooserModel();
 
@@ -128,7 +137,29 @@ final class CopyMoveFilesNodeDialog extends NodeDialogPane {
 
         sourceFileChooserConfig.addChangeListener(l -> m_swingWorkerManager.startSwingWorker());
 
+        final ColumnFilter filter = createColumnFilter();
+
+        m_selectedSourceColumn =
+            new DialogComponentColumnNameSelection(config.getSelectedSourceColumnModel(), "Source Column",
+                portsConfiguration.getInputPortLocation().get(CopyMoveFilesNodeModel.TABLE_PORT_GRP_NAME)[0], false,
+                filter);
+
         createPanel();
+    }
+
+    //TODO desc and so on
+    private static ColumnFilter createColumnFilter() {
+        return new ColumnFilter() {
+            @Override
+            public final boolean includeColumn(final DataColumnSpec colSpec) {
+                return colSpec.getType().isCompatible(FSLocationValue.class);
+            }
+
+            @Override
+            public final String allFilteredMsg() {
+                return "No applicable column available";
+            }
+        };
     }
 
     /**
@@ -157,6 +188,7 @@ final class CopyMoveFilesNodeDialog extends NodeDialogPane {
         final GridBagConstraints gbc = createAndInitGBC();
         panel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "Source"));
         panel.add(m_sourceFilePanel.getComponentPanel(), gbc);
+
         return panel;
     }
 
@@ -171,6 +203,8 @@ final class CopyMoveFilesNodeDialog extends NodeDialogPane {
         panel.add(m_includeParentFolderCheckbox.getComponentPanel(), gbc);
         gbc.gridx++;
         panel.add(m_deleteSourceFilesCheckbox.getComponentPanel(), gbc);
+        gbc.gridx++;
+        panel.add(m_selectedSourceColumn.getComponentPanel(), gbc);
         gbc.weightx = 1;
         gbc.gridx++;
         panel.add(Box.createHorizontalBox(), gbc);
@@ -218,6 +252,7 @@ final class CopyMoveFilesNodeDialog extends NodeDialogPane {
         m_sourceFilePanel.saveSettingsTo(settings);
         m_deleteSourceFilesCheckbox.saveSettingsTo(settings);
         m_includeParentFolderCheckbox.saveSettingsTo(settings);
+        m_selectedSourceColumn.saveSettingsTo(settings);
     }
 
     @Override
@@ -227,5 +262,6 @@ final class CopyMoveFilesNodeDialog extends NodeDialogPane {
         m_destinationFilePanel.loadSettingsFrom(settings, specs);
         m_deleteSourceFilesCheckbox.loadSettingsFrom(settings, specs);
         m_includeParentFolderCheckbox.loadSettingsFrom(settings, specs);
+        m_selectedSourceColumn.loadSettingsFrom(settings, specs);
     }
 }

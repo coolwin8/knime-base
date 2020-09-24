@@ -52,6 +52,7 @@ import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
 import org.knime.core.node.defaultnodesettings.SettingsModelBoolean;
+import org.knime.core.node.defaultnodesettings.SettingsModelString;
 import org.knime.filehandling.core.defaultnodesettings.filechooser.reader.SettingsModelReaderFileChooser;
 import org.knime.filehandling.core.defaultnodesettings.filechooser.writer.SettingsModelWriterFileChooser;
 
@@ -68,11 +69,35 @@ final class CopyMoveFilesNodeConfig {
     /** Config key for include parent folder checkbox. */
     private static final String CFG_INCLUDE_PARENT_FOLDER = "include_parent_folder";
 
+    //TODO comes with AP-14932
+    /** Config key for source column name. */
+    private static final String CFG_SOURCE_COLUMN = "source_column";
+
+    //TODO comes with AP-14932
+    /** Config key fordestination column name. */
+    private static final String CFG_DESTINATION_COLUMN = "destination_column";
+
+    //TODO comes with AP-14932
+    /** Config key for the use destination column checkbox. */
+    private static final String CFG_USE_DEST_COL = "use_dest_column";
+
     /** The file chooser model. */
     private final SettingsModelReaderFileChooser m_sourceFileChooserModel;
 
     /** The file chooser model. */
     private final SettingsModelWriterFileChooser m_destinationFileChooserModel;
+
+    //TODO comes with AP-14932
+    /** The settings model for the selected source column */
+    private final SettingsModelString m_selectedSourceColumn = new SettingsModelString(CFG_SOURCE_COLUMN, "");
+
+    //TODO comes with AP-14932
+    /** The settings model for the selected destination column */
+    private final SettingsModelString m_selectedDestinationColumn = new SettingsModelString(CFG_DESTINATION_COLUMN, "");
+
+    //TODO comes with AP-14932
+    /** The use destination column settings model */
+    private final SettingsModelBoolean m_useDestinationColumn = new SettingsModelBoolean(CFG_USE_DEST_COL, false);
 
     /** The delete source settings model. */
     private final SettingsModelBoolean m_deleteSourceFilesModel =
@@ -95,6 +120,36 @@ final class CopyMoveFilesNodeConfig {
      */
     SettingsModelReaderFileChooser getSourceFileChooserModel() {
         return m_sourceFileChooserModel;
+    }
+
+    //TODO comes with AP-14932
+    /**
+     * Returns the {@link SettingsModelString} of the source column selector.
+     *
+     * @return the selected source column model
+     */
+    SettingsModelString getSelectedSourceColumnModel() {
+        return m_selectedSourceColumn;
+    }
+
+    //TODO comes with AP-14932
+    /**
+     * Returns the {@link SettingsModelString} of the destination column selector.
+     *
+     * @return the destination source column model
+     */
+    SettingsModelString getSelectedDestinationColumnModel() {
+        return m_selectedDestinationColumn;
+    }
+
+    //TODO comes with AP-14932
+    /**
+     * Returns the {@link SettingsModelBoolean} for the use destination column option.
+     *
+     * @return the useDestinatnionColumnModel
+     */
+    SettingsModelBoolean getUseDestinationColumnModel() {
+        return m_useDestinationColumn;
     }
 
     /**
@@ -135,6 +190,10 @@ final class CopyMoveFilesNodeConfig {
         m_destinationFileChooserModel.validateSettings(settings);
         m_deleteSourceFilesModel.validateSettings(settings);
         m_includeParentFolderModel.validateSettings(settings);
+        //TODO comes with AP-14932
+        //        m_useDestinationColumn.validateSettings(settings);
+        m_selectedSourceColumn.validateSettings(settings);
+        //        m_destinationFileChooserModel.validateSettings(settings);
     }
 
     /**
@@ -147,6 +206,10 @@ final class CopyMoveFilesNodeConfig {
         m_destinationFileChooserModel.saveSettingsTo(settings);
         m_deleteSourceFilesModel.saveSettingsTo(settings);
         m_includeParentFolderModel.saveSettingsTo(settings);
+        //TODO comes with AP-14932
+        //        m_useDestinationColumn.saveSettingsTo(settings);
+        m_selectedSourceColumn.saveSettingsTo(settings);
+        //        m_destinationFileChooserModel.saveSettingsTo(settings);
     }
 
     /**
@@ -160,5 +223,9 @@ final class CopyMoveFilesNodeConfig {
         m_destinationFileChooserModel.loadSettingsFrom(settings);
         m_deleteSourceFilesModel.loadSettingsFrom(settings);
         m_includeParentFolderModel.loadSettingsFrom(settings);
+        //TODO comes with AP-14932
+        //        m_useDestinationColumn.loadSettingsFrom(settings);
+        m_selectedSourceColumn.loadSettingsFrom(settings);
+        //        m_selectedDestinationColumn.loadSettingsFrom(settings);
     }
 }

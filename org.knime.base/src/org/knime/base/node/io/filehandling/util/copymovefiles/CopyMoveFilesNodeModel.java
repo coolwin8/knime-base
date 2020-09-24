@@ -50,16 +50,11 @@ package org.knime.base.node.io.filehandling.util.copymovefiles;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.EnumSet;
-import java.util.List;
 
-import org.knime.base.node.io.filehandling.util.PathRelativizer;
-import org.knime.base.node.io.filehandling.util.PathRelativizerNonTableInput;
 import org.knime.core.data.DataTableSpec;
-import org.knime.core.data.filestore.FileStoreFactory;
 import org.knime.core.node.BufferedDataContainer;
-import org.knime.core.node.BufferedDataTable;
 import org.knime.core.node.CanceledExecutionException;
 import org.knime.core.node.ExecutionContext;
 import org.knime.core.node.ExecutionMonitor;
@@ -70,13 +65,8 @@ import org.knime.core.node.NodeSettingsWO;
 import org.knime.core.node.context.ports.PortsConfiguration;
 import org.knime.core.node.port.PortObject;
 import org.knime.core.node.port.PortObjectSpec;
-import org.knime.core.node.util.CheckUtils;
-import org.knime.filehandling.core.connections.FSFiles;
-import org.knime.filehandling.core.connections.FSPath;
+import org.knime.filehandling.core.connections.FSLocation;
 import org.knime.filehandling.core.data.location.variable.FSLocationVariableType;
-import org.knime.filehandling.core.defaultnodesettings.filechooser.reader.ReadPathAccessor;
-import org.knime.filehandling.core.defaultnodesettings.filechooser.writer.WritePathAccessor;
-import org.knime.filehandling.core.defaultnodesettings.filtermode.SettingsModelFilterMode.FilterMode;
 import org.knime.filehandling.core.defaultnodesettings.status.NodeModelStatusConsumer;
 import org.knime.filehandling.core.defaultnodesettings.status.StatusMessage.MessageType;
 
@@ -93,7 +83,13 @@ final class CopyMoveFilesNodeModel extends NodeModel {
     /** The name of the optional destination connection input port group. */
     static final String CONNECTION_DESTINATION_PORT_GRP_NAME = "Destination File System Connection";
 
+    //TODO comes with AP-14932.
+    /** The name of the optional table input port group. */
+    static final String TABLE_PORT_GRP_NAME = "Path Table Input Port";
+
     private final CopyMoveFilesNodeConfig m_config;
+
+    private CopyExecutionFactory m_copyExecutionFactory;
 
     private final NodeModelStatusConsumer m_statusConsumer =
         new NodeModelStatusConsumer(EnumSet.of(MessageType.ERROR, MessageType.WARNING));
@@ -103,97 +99,54 @@ final class CopyMoveFilesNodeModel extends NodeModel {
      *
      * @param portsConfig the {@link PortsConfiguration}
      * @param config the {@link CopyMoveFilesNodeConfig}
+     * @param copyExecutionFactory the {@link CopyExecutionFactory} depending on the {@link PortsConfiguration}
      */
-    CopyMoveFilesNodeModel(final PortsConfiguration portsConfig, final CopyMoveFilesNodeConfig config) {
+    CopyMoveFilesNodeModel(final PortsConfiguration portsConfig, final CopyMoveFilesNodeConfig config,
+        final CopyExecutionFactory copyExecutionFactory) {
         super(portsConfig.getInputPorts(), portsConfig.getOutputPorts());
         m_config = config;
+        m_copyExecutionFactory = copyExecutionFactory;
     }
 
     @Override
     protected PortObjectSpec[] configure(final PortObjectSpec[] inSpecs) throws InvalidSettingsException {
+        //TODO?
         m_config.getSourceFileChooserModel().configureInModel(inSpecs, m_statusConsumer);
         m_config.getDestinationFileChooserModel().configureInModel(inSpecs, m_statusConsumer);
         m_statusConsumer.setWarningsIfRequired(this::setWarningMessage);
 
-        return new PortObjectSpec[]{FileCopier.createOutputSpec(m_config)};
+        final DataTableSpec outputSpec = m_copyExecutionFactory.createSpec(inSpecs, m_config);
+
+
+        return new PortObjectSpec[]{outputSpec};
+    }
+
+    /**
+     * Creates the {@link FSLocationVariableType#INSTANCE} flow variables.
+     *
+     * @param name of the flow variable
+     * @param location the {@link FSLocation} of the flow variable
+     */
+    private void pushLocationVar(final String name, final FSLocation location) {
+        pushFlowVariable(name, FSLocationVariableType.INSTANCE, location);
     }
 
     @Override
     protected PortObject[] execute(final PortObject[] inObjects, final ExecutionContext exec) throws Exception {
-        try (final ReadPathAccessor readPathAccessor = m_config.getSourceFileChooserModel().createReadPathAccessor();
-                final WritePathAccessor writePathAccessor =
-                    m_config.getDestinationFileChooserModel().createWritePathAccessor()) {
+        final PortObjectSpec[] inSpecs = Arrays.stream(inObjects)//
+            .map(PortObject::getSpec)//
+            .toArray(PortObjectSpec[]::new);
 
-            // Create container for output table
-            final DataTableSpec outputSpec = FileCopier.createOutputSpec(m_config);
-            final BufferedDataContainer container = exec.createDataContainer(outputSpec);
+        final DataTableSpec outputSpec = m_copyExecutionFactory.createSpec(inSpecs, m_config);
+        final BufferedDataContainer container = exec.createDataContainer(outputSpec);
+        final CopyExecution execution = m_copyExecutionFactory.createExecution(inObjects, m_config);
 
-            final BufferedDataTable outputTable = copyFiles(container, readPathAccessor, writePathAccessor, exec);
-
-            return new PortObject[]{outputTable};
-        }
-    }
-
-    private BufferedDataTable copyFiles(final BufferedDataContainer container, final ReadPathAccessor readPathAccessor,
-        final WritePathAccessor writePathAccessor, final ExecutionContext exec)
-        throws IOException, CanceledExecutionException, InvalidSettingsException {
-        //Get paths
-        final FSPath rootPath = readPathAccessor.getRootPath(m_statusConsumer);
-        final FSPath destinationDir = writePathAccessor.getOutputPath(m_statusConsumer);
-        final FilterMode filterMode = m_config.getSourceFileChooserModel().getFilterModeModel().getFilterMode();
-        final List<FSPath> sourcePaths = getSourcePaths(readPathAccessor, filterMode);
+        execution.fillRowOutput(container::addRowToTable, m_statusConsumer, exec);
+        execution.pushFlowVariables(this::pushLocationVar);
         m_statusConsumer.setWarningsIfRequired(this::setWarningMessage);
-        //Creates output directories if necessary
-        if (m_config.getDestinationFileChooserModel().isCreateMissingFolders()) {
-            FileCopier.createOutputDirectories(destinationDir);
-        }
-
-        final PathRelativizer pathRelativizer = new PathRelativizerNonTableInput(rootPath,
-            m_config.getSettingsModelIncludeParentFolder().getBooleanValue(), filterMode);
-
-        createFlowVariables(rootPath, destinationDir);
-
-        final FileStoreFactory fileStoreFactory = FileStoreFactory.createFileStoreFactory(exec);
-        final FileCopier fileCopier = new FileCopier(container::addRowToTable, m_config, fileStoreFactory);
-
-        long rowIdx = 0;
-        final long noOfFiles = sourcePaths.size();
-        for (Path sourceFilePath : sourcePaths) {
-            final Path destinationFilePath = destinationDir.resolve(pathRelativizer.apply(sourceFilePath));
-            fileCopier.copy(sourceFilePath, destinationFilePath, rowIdx);
-            final long copiedFiles = rowIdx + 1;
-            exec.setProgress(copiedFiles / (double)noOfFiles, () -> ("Copied files :" + copiedFiles));
-            exec.checkCanceled();
-            rowIdx++;
-        }
 
         container.close();
-        fileStoreFactory.close();
-
-        return container.getTable();
-    }
-
-    private List<FSPath> getSourcePaths(final ReadPathAccessor readPathAccessor, final FilterMode filterMode)
-        throws IOException, InvalidSettingsException {
-        List<FSPath> sourcePaths = readPathAccessor.getFSPaths(m_statusConsumer);
-        CheckUtils.checkSetting(!sourcePaths.isEmpty(),
-            "No files available please select a folder which contains files");
-        if (filterMode == FilterMode.FOLDER) {
-            final List<FSPath> pathsFromFolder = FSFiles.getFilePathsFromFolder(sourcePaths.get(0));
-            sourcePaths = pathsFromFolder;
-        }
-        return sourcePaths;
-    }
-
-    /**
-     * Creates the {@link FSLocationVariableType#INSTANCE} flow variables for the source and target path.
-     *
-     * @param source the {@link FSPath} of the source file chooser
-     * @param target the {@link FSPath} of the target file chooser
-     */
-    private void createFlowVariables(final FSPath source, final FSPath target) {
-        pushFlowVariable("source_path", FSLocationVariableType.INSTANCE, source.toFSLocation());
-        pushFlowVariable("destination_path", FSLocationVariableType.INSTANCE, target.toFSLocation());
+        return new PortObject[]{container.getTable()};
     }
 
     @Override

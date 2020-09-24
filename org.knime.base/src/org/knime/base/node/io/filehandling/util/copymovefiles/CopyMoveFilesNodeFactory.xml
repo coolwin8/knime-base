@@ -181,7 +181,8 @@
 			If this option is checked all files which have
 			been
 			successfully copied to the destination folder
-			will be deleted in the
+			will be deleted in
+			the
 			source
 			folder. The output contains an
 			additional column indicating
@@ -198,13 +199,17 @@
 			group-identifier="Source File System Connection">
 			The source file system connection.
 		</dynInPort>
+		<dynInPort insert-before="0" name="Path Table Input Port"
+			group-identifier="Path Table Input Port"> The table input.
+		</dynInPort>
 		<dynInPort insert-before="0"
 			name="Destination file system connection"
 			group-identifier="Destination File System Connection">
 			The destination file system connection.
 		</dynInPort>
 		<outPort index="0" name="Copied files table">The files which should be copied with
-			a source path column, destination path column, copied status column and a deleted source column.
+			a source path column, destination path column, copied status column
+			and a deleted source column.
 		</outPort>
 	</ports>
 </knimeNode>

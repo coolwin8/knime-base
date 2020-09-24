@@ -62,6 +62,7 @@ import org.knime.core.data.DataColumnSpec;
 import org.knime.core.data.DataColumnSpecCreator;
 import org.knime.core.data.DataRow;
 import org.knime.core.data.DataTableSpec;
+import org.knime.core.data.MissingCell;
 import org.knime.core.data.RowKey;
 import org.knime.core.data.def.BooleanCell;
 import org.knime.core.data.def.BooleanCell.BooleanCellFactory;
@@ -71,7 +72,7 @@ import org.knime.core.data.def.StringCell.StringCellFactory;
 import org.knime.core.data.filestore.FileStoreFactory;
 import org.knime.core.node.NodeLogger;
 import org.knime.filehandling.core.connections.FSFiles;
-import org.knime.filehandling.core.connections.FSLocation;
+import org.knime.filehandling.core.connections.FSLocationSpec;
 import org.knime.filehandling.core.data.location.FSLocationValueMetaData;
 import org.knime.filehandling.core.data.location.cell.FSLocationCell;
 import org.knime.filehandling.core.data.location.cell.FSLocationCellFactory;
@@ -85,8 +86,6 @@ import org.knime.filehandling.core.defaultnodesettings.filesystemchooser.Setting
  */
 final class FileCopier {
 
-    private static final NodeLogger LOGGER = NodeLogger.getLogger(FileCopier.class);
-
     private static final int NUMBER_OF_COLS = 5;
 
     private static final int SOURCE_COL_IDX = 0;
@@ -98,6 +97,8 @@ final class FileCopier {
     private static final int DELETED_COL_IDX = 3;
 
     private static final int STATUS_COL_IDX = 4;
+
+    private static final NodeLogger LOGGER = NodeLogger.getLogger(FileCopier.class);
 
     private final Consumer<DataRow> m_rowConsumer;
 
@@ -122,15 +123,14 @@ final class FileCopier {
      * @param numberOfCols the number of columns in the output spec
      */
     FileCopier(final Consumer<DataRow> rowConsumer, final CopyMoveFilesNodeConfig config,
-        final FileStoreFactory fileStoreFactory) {
+        final FileStoreFactory fileStoreFactory, final FSLocationSpec sourceLocationSpec,
+        final FSLocationSpec destinationLocationSpec, final FileOverwritePolicy fileOverwritePolicy) {
         m_rowConsumer = rowConsumer;
         m_config = config;
         m_isDeleteMode = config.getDeleteSourceFilesModel().getBooleanValue();
-        m_sourceFSLocationCellFactory =
-            new FSLocationCellFactory(fileStoreFactory, m_config.getSourceFileChooserModel().getLocation());
-        m_destinationFSLocationCellFactory =
-            new FSLocationCellFactory(fileStoreFactory, m_config.getDestinationFileChooserModel().getLocation());
-        m_fileOverWritePolicy = m_config.getDestinationFileChooserModel().getFileOverwritePolicy();
+        m_sourceFSLocationCellFactory = new FSLocationCellFactory(fileStoreFactory, sourceLocationSpec);
+        m_destinationFSLocationCellFactory = new FSLocationCellFactory(fileStoreFactory, destinationLocationSpec);
+        m_fileOverWritePolicy = fileOverwritePolicy;
         m_openOptions = m_fileOverWritePolicy.getOpenOptions();
     }
 
@@ -143,7 +143,6 @@ final class FileCopier {
      * @throws IOException
      */
     void copy(final Path sourcePath, final Path destinationPath, final long rowIdx) throws IOException {
-
         //Create directories if they do not exist
         createOutputDirectories(destinationPath.getParent());
         final FSLocationCell sourcePathCell = m_sourceFSLocationCellFactory.createCell(sourcePath.toString());
@@ -216,15 +215,37 @@ final class FileCopier {
     }
 
     /**
+     * Creates a new row and adds it via the {@link Consumer} of {@link DataRow}.
+     *
+     * @param rowIdx the current row index
+     * @param sourcePathCell the {@link FSLocationCell} for the source path
+     * @param destinationPathCell the {@link FSLocationCell} for the destination path
+     * @param copied the flag whether the file has been copied or not
+     * @param deleted the flag whether the file has been deleted or not
+     */
+    protected void pushEmptyRow(final long rowIdx) {
+        final DataCell[] cells = new DataCell[NUMBER_OF_COLS];
+        cells[SOURCE_COL_IDX] = new MissingCell("Comes with AP-14932");
+        cells[DESTINATION_COL_IDX] = new MissingCell("Comes with AP-14932");
+        cells[COPIED_COL_IDX] = new MissingCell("Comes with AP-14932");
+        cells[DELETED_COL_IDX] = new MissingCell("Comes with AP-14932");
+        cells[STATUS_COL_IDX] = new MissingCell("Comes with AP-14932");
+
+        m_rowConsumer.accept(new DefaultRow(RowKey.createRowKey(rowIdx), cells));
+    }
+
+
+    /**
      * Creates the output spec of the output of the node.
      *
      * @param config the {@link CopyMoveFilesNodeConfig}
      * @return the output {@link DataTableSpec}
      */
-    static DataTableSpec createOutputSpec(final CopyMoveFilesNodeConfig config) {
+    static DataTableSpec createOutputSpec(final CopyMoveFilesNodeConfig config, final FSLocationSpec sourceLocationSpec,
+        final FSLocationSpec destinationLocationSpec) {
         final ArrayList<DataColumnSpec> columnSpecs = new ArrayList<>();
-        columnSpecs.add(createMetaColumnSpec(config.getSourceFileChooserModel().getLocation(), "Source Path"));
-        columnSpecs.add(createMetaColumnSpec(config.getDestinationFileChooserModel().getLocation(), "Destination Path"));
+        columnSpecs.add(createMetaColumnSpec(sourceLocationSpec, "Source Path"));
+        columnSpecs.add(createMetaColumnSpec(destinationLocationSpec, "Destination Path"));
         columnSpecs.add(new DataColumnSpecCreator("Copied", BooleanCell.TYPE).createSpec());
         columnSpecs.add(new DataColumnSpecCreator("Source Deleted", BooleanCell.TYPE).createSpec());
         columnSpecs.add(new DataColumnSpecCreator("Status", StringCell.TYPE).createSpec());
@@ -238,7 +259,7 @@ final class FileCopier {
      * @param columnName the name of the column
      * @return the {@link DataColumnSpec}
      */
-    private static DataColumnSpec createMetaColumnSpec(final FSLocation locationsSpec, final String columnName) {
+    private static DataColumnSpec createMetaColumnSpec(final FSLocationSpec locationsSpec, final String columnName) {
         final FSLocationValueMetaData metaData = new FSLocationValueMetaData(locationsSpec.getFileSystemCategory(),
             locationsSpec.getFileSystemSpecifier().orElse(null));
         final DataColumnSpecCreator fsLocationSpec = new DataColumnSpecCreator(columnName, FSLocationCellFactory.TYPE);
