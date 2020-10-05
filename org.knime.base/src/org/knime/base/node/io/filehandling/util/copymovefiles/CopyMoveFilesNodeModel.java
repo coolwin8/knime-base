@@ -52,9 +52,12 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.Iterator;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.knime.core.data.DataTableSpec;
 import org.knime.core.node.BufferedDataContainer;
+import org.knime.core.node.BufferedDataTable;
 import org.knime.core.node.CanceledExecutionException;
 import org.knime.core.node.ExecutionContext;
 import org.knime.core.node.ExecutionMonitor;
@@ -66,6 +69,7 @@ import org.knime.core.node.context.ports.PortsConfiguration;
 import org.knime.core.node.port.PortObject;
 import org.knime.core.node.port.PortObjectSpec;
 import org.knime.filehandling.core.connections.FSLocation;
+import org.knime.filehandling.core.connections.FSPath;
 import org.knime.filehandling.core.data.location.variable.FSLocationVariableType;
 import org.knime.filehandling.core.defaultnodesettings.status.NodeModelStatusConsumer;
 import org.knime.filehandling.core.defaultnodesettings.status.StatusMessage.MessageType;
@@ -108,6 +112,10 @@ final class CopyMoveFilesNodeModel extends NodeModel {
         m_copyExecutionFactory = copyExecutionFactory;
     }
 
+    private CloseableIterator getIterator(final PortObject[] inObjects) throws InvalidSettingsException {
+        return new TablePathIterator((BufferedDataTable)inObjects[0], "Path", m_config, m_statusConsumer);
+    }
+
     @Override
     protected PortObjectSpec[] configure(final PortObjectSpec[] inSpecs) throws InvalidSettingsException {
         //TODO?
@@ -116,7 +124,6 @@ final class CopyMoveFilesNodeModel extends NodeModel {
         m_statusConsumer.setWarningsIfRequired(this::setWarningMessage);
 
         final DataTableSpec outputSpec = m_copyExecutionFactory.createSpec(inSpecs, m_config);
-
 
         return new PortObjectSpec[]{outputSpec};
     }
@@ -137,13 +144,26 @@ final class CopyMoveFilesNodeModel extends NodeModel {
             .map(PortObject::getSpec)//
             .toArray(PortObjectSpec[]::new);
 
+//        final BufferedDataTable inputDataTable = (BufferedDataTable)inObjects[0];
+
+        //TODO hier dann entsprechende Methode der entsprechenden RowIterator zurückliefert
+        try (final CloseableIterator iterator = getIterator(inObjects)) {
+            while (iterator.hasNext()) {
+                final Iterator<Pair<FSPath, FSPath>> listIterator = iterator.next().iterator();
+                while (listIterator.hasNext()) {
+                    final Pair<FSPath, FSPath> pair = listIterator.next();
+                    //TODO hier kopieren und status thingy
+                }
+            }
+        }
+
         final DataTableSpec outputSpec = m_copyExecutionFactory.createSpec(inSpecs, m_config);
         final BufferedDataContainer container = exec.createDataContainer(outputSpec);
-        final CopyExecution execution = m_copyExecutionFactory.createExecution(inObjects, m_config);
+        //        final CopyExecution execution = m_copyExecutionFactory.createExecution(inObjects, m_config);
 
-        execution.fillRowOutput(container::addRowToTable, m_statusConsumer, exec);
-        execution.pushFlowVariables(this::pushLocationVar);
-        m_statusConsumer.setWarningsIfRequired(this::setWarningMessage);
+        //        execution.fillRowOutput(container::addRowToTable, m_statusConsumer, exec);
+        //        execution.pushFlowVariables(this::pushLocationVar);
+        //        m_statusConsumer.setWarningsIfRequired(this::setWarningMessage);
 
         container.close();
         return new PortObject[]{container.getTable()};
