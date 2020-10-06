@@ -62,6 +62,8 @@ import org.knime.filehandling.core.connections.location.FSPathProviderFactory;
  *
  * @author lars.schweikardt
  */
+
+//TODO naming
 final class MyPair implements AutoCloseable {
 
     private final MyEntry m_myEntry;
@@ -79,7 +81,7 @@ final class MyPair implements AutoCloseable {
 
     public List<Pair<FSPath, FSPath>> getEntries() throws IOException {
         final List<Pair<FSPath, FSPath>> pairList = new ArrayList<>();
-        final List<FSPath> srcPaths = m_myEntry.getSourceFilePaths();
+        final List<FSPath> srcPaths = m_myEntry.getSourcePaths();
 
         for (FSPath srcPath : srcPaths) {
             pairList.add(Pair.of(srcPath, (FSPath)m_destinationPath.resolve(m_pathRelativizer.apply(srcPath))));

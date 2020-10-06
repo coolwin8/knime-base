@@ -71,6 +71,8 @@ import org.knime.core.node.port.PortObjectSpec;
 import org.knime.filehandling.core.connections.FSLocation;
 import org.knime.filehandling.core.connections.FSPath;
 import org.knime.filehandling.core.data.location.variable.FSLocationVariableType;
+import org.knime.filehandling.core.defaultnodesettings.filechooser.reader.ReadPathAccessor;
+import org.knime.filehandling.core.defaultnodesettings.filechooser.writer.WritePathAccessor;
 import org.knime.filehandling.core.defaultnodesettings.status.NodeModelStatusConsumer;
 import org.knime.filehandling.core.defaultnodesettings.status.StatusMessage.MessageType;
 
@@ -112,8 +114,19 @@ final class CopyMoveFilesNodeModel extends NodeModel {
         m_copyExecutionFactory = copyExecutionFactory;
     }
 
-    private CloseableIterator getIterator(final PortObject[] inObjects) throws InvalidSettingsException {
-        return new TablePathIterator((BufferedDataTable)inObjects[0], "Path", m_config, m_statusConsumer);
+    private CloseableIterator getIterator(final PortObject[] inObjects) throws InvalidSettingsException, IOException {
+        if (1 != 1) {
+            try (final ReadPathAccessor readPathAccessor =
+                m_config.getSourceFileChooserModel().createReadPathAccessor();
+                    final WritePathAccessor writePathAccessor =
+                        m_config.getDestinationFileChooserModel().createWritePathAccessor()) {
+
+                return new FileChooserPathIterator(m_config, m_statusConsumer, readPathAccessor,
+                    readPathAccessor.getRootPath(m_statusConsumer), writePathAccessor.getOutputPath(m_statusConsumer));
+            }
+        } else {
+            return new TablePathIterator((BufferedDataTable)inObjects[0], "Path", m_config, m_statusConsumer);
+        }
     }
 
     @Override
@@ -144,7 +157,7 @@ final class CopyMoveFilesNodeModel extends NodeModel {
             .map(PortObject::getSpec)//
             .toArray(PortObjectSpec[]::new);
 
-//        final BufferedDataTable inputDataTable = (BufferedDataTable)inObjects[0];
+        //        final BufferedDataTable inputDataTable = (BufferedDataTable)inObjects[0];
 
         //TODO hier dann entsprechende Methode der entsprechenden RowIterator zurückliefert
         try (final CloseableIterator iterator = getIterator(inObjects)) {
@@ -152,6 +165,8 @@ final class CopyMoveFilesNodeModel extends NodeModel {
                 final Iterator<Pair<FSPath, FSPath>> listIterator = iterator.next().iterator();
                 while (listIterator.hasNext()) {
                     final Pair<FSPath, FSPath> pair = listIterator.next();
+                    System.out.println(pair.getLeft());
+                    System.out.println(pair.getRight());
                     //TODO hier kopieren und status thingy
                 }
             }

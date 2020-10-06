@@ -71,7 +71,7 @@ final class MyEntry implements AutoCloseable {
         m_pathProvider = pathProvFactory.create(fsLocation);
     }
 
-    public List<FSPath> getSourceFilePaths() throws IOException {
+    public List<FSPath> getSourcePaths() throws IOException {
         final List<FSPath> paths = new ArrayList<>();
         final FSPath path = m_pathProvider.getPath();
 

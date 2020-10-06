@@ -49,39 +49,27 @@
 package org.knime.base.node.io.filehandling.util.copymovefiles;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Consumer;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.knime.base.node.io.filehandling.util.PathRelativizer;
-import org.knime.base.node.io.filehandling.util.PathRelativizerTableInput;
-import org.knime.core.data.DataColumnSpec;
-import org.knime.core.data.DataRow;
-import org.knime.core.data.container.CloseableRowIterator;
-import org.knime.core.node.BufferedDataTable;
+import org.knime.base.node.io.filehandling.util.PathRelativizerNonTableInput;
 import org.knime.core.node.InvalidSettingsException;
-import org.knime.filehandling.core.connections.FSConnection;
-import org.knime.filehandling.core.connections.FSLocation;
-import org.knime.filehandling.core.connections.FSLocationSpec;
+import org.knime.core.node.util.CheckUtils;
+import org.knime.filehandling.core.connections.FSFiles;
 import org.knime.filehandling.core.connections.FSPath;
-import org.knime.filehandling.core.connections.location.FSPathProviderFactory;
-import org.knime.filehandling.core.data.location.FSLocationValueMetaData;
-import org.knime.filehandling.core.data.location.cell.FSLocationCell;
-import org.knime.filehandling.core.defaultnodesettings.filechooser.writer.WritePathAccessor;
+import org.knime.filehandling.core.defaultnodesettings.filechooser.reader.ReadPathAccessor;
+import org.knime.filehandling.core.defaultnodesettings.filtermode.SettingsModelFilterMode.FilterMode;
 import org.knime.filehandling.core.defaultnodesettings.status.StatusMessage;
 
 /**
  *
  * @author lars.schweikardt
  */
-final class TablePathIterator implements CloseableIterator {
-
-    private CloseableRowIterator m_rowIterator;
-
-    private final int m_index;
-
-    private final FSPathProviderFactory m_pathProvFactory;
+final class FileChooserPathIterator implements CloseableIterator {
 
     private final CopyMoveFilesNodeConfig m_config;
 
@@ -89,52 +77,50 @@ final class TablePathIterator implements CloseableIterator {
 
     private final PathRelativizer m_pathRelativizer;
 
-    TablePathIterator(final BufferedDataTable table, final String columnName, final CopyMoveFilesNodeConfig config,
-        final Consumer<StatusMessage> statusMessageConsumer) {
-        m_rowIterator = table.iterator();
-        m_index = table.getDataTableSpec().findColumnIndex(columnName);
-        //TODO checkout how to do to
-        final Optional<FSConnection> fsConnectionSource = Optional.empty();
-        m_pathProvFactory = FSPathProviderFactory.newFactory(fsConnectionSource,
-            getFSLocationSpec(table.getSpec().getColumnSpec(columnName)));
+    private final Iterator<FSPath> m_srcIterator;
+
+    private final FSPath m_destinationPath;
+
+    FileChooserPathIterator(final CopyMoveFilesNodeConfig config, final Consumer<StatusMessage> statusMessageConsumer,
+        final ReadPathAccessor readPathAccessor, final FSPath rootSource, final FSPath destinationPath)
+        throws IOException, InvalidSettingsException {
         m_config = config;
         m_statusConsumer = statusMessageConsumer;
-        //TODO do we offer include parent?
-        m_pathRelativizer = new PathRelativizerTableInput(false);
+        m_srcIterator = getSourcePaths(readPathAccessor, m_config.getSourceFileChooserModel().getFilterMode());
+        m_destinationPath = destinationPath;
+        m_pathRelativizer = new PathRelativizerNonTableInput(rootSource,
+            m_config.getSettingsModelIncludeParentFolder().getBooleanValue(),
+            m_config.getSourceFileChooserModel().getFilterMode());
     }
 
-    //TODO auslagern somewhere
-    private static FSLocationSpec getFSLocationSpec(final DataColumnSpec colSpec) {
-        return colSpec.getMetaDataOfType(FSLocationValueMetaData.class).orElseThrow(IllegalStateException::new);
+    private Iterator<FSPath> getSourcePaths(final ReadPathAccessor readPathAccessor, final FilterMode filterMode)
+        throws IOException, InvalidSettingsException {
+        List<FSPath> sourcePaths = readPathAccessor.getFSPaths(m_statusConsumer);
+        CheckUtils.checkSetting(!sourcePaths.isEmpty(),
+            "No files available please select a folder which contains files");
+        if (filterMode == FilterMode.FOLDER) {
+            final List<FSPath> pathsFromFolder = FSFiles.getFilePathsFromFolder(sourcePaths.get(0));
+            sourcePaths = pathsFromFolder;
+        }
+        return sourcePaths.iterator();
     }
 
     @Override
     public boolean hasNext() {
-        return m_rowIterator.hasNext();
+        return m_srcIterator.hasNext();
     }
 
     @Override
     public List<Pair<FSPath, FSPath>> next() {
-        final DataRow dataRow = m_rowIterator.next();
-        final FSLocation fsLocation = ((FSLocationCell)dataRow.getCell(m_index)).getFSLocation();
+        //path only valid in try scope?
+        final FSPath srcPath = m_srcIterator.next();
+        final FSPath destPath = (FSPath)m_destinationPath.resolve(m_pathRelativizer.apply(srcPath));
 
-        try (final WritePathAccessor writePathAccessor =
-            m_config.getDestinationFileChooserModel().createWritePathAccessor()) {
-            final FSPath destinationPath = writePathAccessor.getOutputPath(m_statusConsumer);
-            try (MyPair myPair = new MyPair(m_pathProvFactory, fsLocation, destinationPath, m_pathRelativizer)) {
-                return myPair.getEntries();
-            } catch (Exception e) {
-                return null;
-            }
-        } catch (IOException | InvalidSettingsException e1) {
-            return null;
-        }
+        return Collections.singletonList(Pair.of(srcPath, destPath));
     }
 
     @Override
     public void close() throws IOException {
-        m_rowIterator.close();
-        m_pathProvFactory.close();
-
+        //TODO not necessary here?
     }
 }
