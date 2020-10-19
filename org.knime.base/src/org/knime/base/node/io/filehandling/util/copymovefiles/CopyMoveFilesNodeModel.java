@@ -52,8 +52,10 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.EnumSet;
+import java.util.Iterator;
 import java.util.List;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.knime.base.node.io.filehandling.util.PathRelativizer;
 import org.knime.base.node.io.filehandling.util.PathRelativizerNonTableInput;
 import org.knime.core.data.DataTableSpec;
@@ -114,18 +116,36 @@ final class CopyMoveFilesNodeModel extends NodeModel {
 
     @Override
     protected PortObject[] execute(final PortObject[] inObjects, final ExecutionContext exec) throws Exception {
+
+        // Create container for output table
+        final DataTableSpec outputSpec = FileCopier.createOutputSpec(m_config);
+        final BufferedDataContainer container = exec.createDataContainer(outputSpec);
+        final FileStoreFactory fileStoreFactory = FileStoreFactory.createFileStoreFactory(exec);
+
+        final FileCopier fileCopier = new FileCopier(container::addRowToTable, m_config, fileStoreFactory);
+
         try (final ReadPathAccessor readPathAccessor = m_config.getSourceFileChooserModel().createReadPathAccessor();
                 final WritePathAccessor writePathAccessor =
-                    m_config.getDestinationFileChooserModel().createWritePathAccessor()) {
+                    m_config.getDestinationFileChooserModel().createWritePathAccessor();
+                final CloseableIterator iterator =
+                    new FileChooserPathIterator(m_config, m_statusConsumer, readPathAccessor, writePathAccessor)) {
 
-            // Create container for output table
-            final DataTableSpec outputSpec = FileCopier.createOutputSpec(m_config);
-            final BufferedDataContainer container = exec.createDataContainer(outputSpec);
-
-            final BufferedDataTable outputTable = copyFiles(container, readPathAccessor, writePathAccessor, exec);
-
-            return new PortObject[]{outputTable};
+            createFlowVariables(iterator.getRootPaths());
+            long rowIdx = 0;
+            final long noOfFiles = iterator.getNumberOfFiles();
+            while (iterator.hasNext()) {
+                final Iterator<Pair<FSPath, FSPath>> listIterator = iterator.next().iterator();
+                while (listIterator.hasNext()) {
+                    final Pair<FSPath, FSPath> pair = listIterator.next();
+                    fileCopier.copy(pair.getLeft(), pair.getRight(), rowIdx);
+                    rowIdx++;
+                }
+            }
         }
+
+        container.close();
+
+        return new PortObject[]{container.getTable()};
     }
 
     private BufferedDataTable copyFiles(final BufferedDataContainer container, final ReadPathAccessor readPathAccessor,
@@ -147,8 +167,6 @@ final class CopyMoveFilesNodeModel extends NodeModel {
 
         final PathRelativizer pathRelativizer = new PathRelativizerNonTableInput(rootPath,
             m_config.getSettingsModelIncludeSourceFolder().getBooleanValue(), filterMode);
-
-        createFlowVariables(rootPath, destinationDir);
 
         final FileStoreFactory fileStoreFactory = FileStoreFactory.createFileStoreFactory(exec);
         final FileCopier fileCopier = new FileCopier(container::addRowToTable, m_config, fileStoreFactory);
@@ -188,9 +206,9 @@ final class CopyMoveFilesNodeModel extends NodeModel {
      * @param source the {@link FSPath} of the source file chooser
      * @param target the {@link FSPath} of the target file chooser
      */
-    private void createFlowVariables(final FSPath source, final FSPath target) {
-        pushFlowVariable("source_path", FSLocationVariableType.INSTANCE, source.toFSLocation());
-        pushFlowVariable("destination_path", FSLocationVariableType.INSTANCE, target.toFSLocation());
+    private void createFlowVariables(final Pair<FSPath, FSPath> rootPaths) {
+        pushFlowVariable("source_path", FSLocationVariableType.INSTANCE, rootPaths.getLeft().toFSLocation());
+        pushFlowVariable("destination_path", FSLocationVariableType.INSTANCE, rootPaths.getRight().toFSLocation());
     }
 
     @Override

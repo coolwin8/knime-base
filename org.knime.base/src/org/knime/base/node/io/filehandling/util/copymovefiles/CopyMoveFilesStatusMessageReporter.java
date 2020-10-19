@@ -123,6 +123,8 @@ final class CopyMoveFilesStatusMessageReporter implements StatusMessageReporter 
 
             final FSPath destinationPath = writePathAccessor.getOutputPath(m_consumerWriter);
 
+            destinationPath.toAbsolutePath();
+
             final List<FSPath> sourcePaths;
             final Path rootSourcePath;
 
