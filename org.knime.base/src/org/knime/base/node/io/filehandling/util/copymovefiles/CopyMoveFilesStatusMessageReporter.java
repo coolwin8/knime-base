@@ -146,8 +146,8 @@ final class CopyMoveFilesStatusMessageReporter implements StatusMessageReporter 
             }
 
             if (FSFiles.exists(destinationPath)) {
-                final PathRelativizer pathRelativizer = new PathRelativizerNonTableInput(rootSourcePath,
-                    m_includeParentFolder, m_settingsReader.getFilterModeModel().getFilterMode());
+                final PathRelativizer pathRelativizer =
+                    new PathRelativizerNonTableInput(rootSourcePath, m_includeParentFolder);
                 final int numberOfExistingFiles =
                     getNumberOfExistingFiles(sourcePaths.iterator(), destinationPath, pathRelativizer);
 
@@ -168,13 +168,15 @@ final class CopyMoveFilesStatusMessageReporter implements StatusMessageReporter 
      * @return the number of existing files in the destination folder
      * @throws AccessDeniedException
      */
-    private static int getNumberOfExistingFiles(final Iterator<FSPath> pathIterator, final FSPath destinationDir,
+    private int getNumberOfExistingFiles(final Iterator<FSPath> pathIterator, final FSPath destinationDir,
         final PathRelativizer pathRelativizer) throws AccessDeniedException {
         int numberOfExistingFiles = 0;
 
         while (pathIterator.hasNext()) {
             final Path sourceFilePath = pathIterator.next();
-            final Path destinationFilePath = destinationDir.resolve(pathRelativizer.apply(sourceFilePath));
+            final Path destinationFilePath = m_settingsReader.getFilterMode() == FilterMode.FILE
+                ? destinationDir.resolve(sourceFilePath.getFileName())
+                : destinationDir.resolve(pathRelativizer.apply(sourceFilePath));
 
             if (FSFiles.exists(destinationFilePath)) {
                 numberOfExistingFiles++;

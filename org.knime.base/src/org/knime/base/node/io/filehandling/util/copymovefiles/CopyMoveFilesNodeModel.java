@@ -50,18 +50,13 @@ package org.knime.base.node.io.filehandling.util.copymovefiles;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.EnumSet;
-import java.util.Iterator;
 import java.util.List;
 
 import org.apache.commons.lang3.tuple.Pair;
-import org.knime.base.node.io.filehandling.util.PathRelativizer;
-import org.knime.base.node.io.filehandling.util.PathRelativizerNonTableInput;
 import org.knime.core.data.DataTableSpec;
 import org.knime.core.data.filestore.FileStoreFactory;
 import org.knime.core.node.BufferedDataContainer;
-import org.knime.core.node.BufferedDataTable;
 import org.knime.core.node.CanceledExecutionException;
 import org.knime.core.node.ExecutionContext;
 import org.knime.core.node.ExecutionMonitor;
@@ -74,6 +69,7 @@ import org.knime.core.node.port.PortObject;
 import org.knime.core.node.port.PortObjectSpec;
 import org.knime.core.node.util.CheckUtils;
 import org.knime.filehandling.core.connections.FSFiles;
+import org.knime.filehandling.core.connections.FSLocation;
 import org.knime.filehandling.core.connections.FSPath;
 import org.knime.filehandling.core.data.location.variable.FSLocationVariableType;
 import org.knime.filehandling.core.defaultnodesettings.filechooser.reader.ReadPathAccessor;
@@ -130,16 +126,16 @@ final class CopyMoveFilesNodeModel extends NodeModel {
                 final CloseableIterator iterator =
                     new FileChooserPathIterator(m_config, m_statusConsumer, readPathAccessor, writePathAccessor)) {
 
-            createFlowVariables(iterator.getRootPaths());
+            iterator.pushFlowVariables(this::pushLocationVar);
             long rowIdx = 0;
             final long noOfFiles = iterator.getNumberOfFiles();
             while (iterator.hasNext()) {
-                final Iterator<Pair<FSPath, FSPath>> listIterator = iterator.next().iterator();
-                while (listIterator.hasNext()) {
-                    final Pair<FSPath, FSPath> pair = listIterator.next();
-                    fileCopier.copy(pair.getLeft(), pair.getRight(), rowIdx);
-                    rowIdx++;
-                }
+                final Pair<FSPath, FSPath> pair = iterator.next();
+                fileCopier.copy(pair.getLeft(), pair.getRight(), rowIdx);
+                final long copiedFiles = rowIdx + 1;
+                exec.setProgress(copiedFiles / (double)noOfFiles, () -> ("Copied files :" + copiedFiles));
+                exec.checkCanceled();
+                rowIdx++;
             }
         }
 
@@ -148,45 +144,49 @@ final class CopyMoveFilesNodeModel extends NodeModel {
         return new PortObject[]{container.getTable()};
     }
 
-    private BufferedDataTable copyFiles(final BufferedDataContainer container, final ReadPathAccessor readPathAccessor,
-        final WritePathAccessor writePathAccessor, final ExecutionContext exec)
-        throws IOException, CanceledExecutionException, InvalidSettingsException {
-        //Get paths
-        final FSPath rootPath = readPathAccessor.getRootPath(m_statusConsumer);
-        final FSPath destinationDir = writePathAccessor.getOutputPath(m_statusConsumer);
-        final FilterMode filterMode = m_config.getSourceFileChooserModel().getFilterModeModel().getFilterMode();
-        final List<FSPath> sourcePaths = getSourcePaths(readPathAccessor, filterMode);
-        m_statusConsumer.setWarningsIfRequired(this::setWarningMessage);
-        //Creates output directories if necessary
-        if (m_config.getDestinationFileChooserModel().isCreateMissingFolders()) {
-            FileCopier.createOutputDirectories(destinationDir);
-        } else {
-            CheckUtils.checkSetting(FSFiles.exists(destinationDir),
-                String.format("The specified destination folder %s does not exist.", destinationDir));
-        }
-
-        final PathRelativizer pathRelativizer = new PathRelativizerNonTableInput(rootPath,
-            m_config.getSettingsModelIncludeSourceFolder().getBooleanValue(), filterMode);
-
-        final FileStoreFactory fileStoreFactory = FileStoreFactory.createFileStoreFactory(exec);
-        final FileCopier fileCopier = new FileCopier(container::addRowToTable, m_config, fileStoreFactory);
-
-        long rowIdx = 0;
-        final long noOfFiles = sourcePaths.size();
-        for (Path sourceFilePath : sourcePaths) {
-            final Path destinationFilePath = destinationDir.resolve(pathRelativizer.apply(sourceFilePath));
-            fileCopier.copy(sourceFilePath, destinationFilePath, rowIdx);
-            final long copiedFiles = rowIdx + 1;
-            exec.setProgress(copiedFiles / (double)noOfFiles, () -> ("Copied files :" + copiedFiles));
-            exec.checkCanceled();
-            rowIdx++;
-        }
-
-        container.close();
-        fileStoreFactory.close();
-
-        return container.getTable();
+    private void pushLocationVar(final String name, final FSLocation location) {
+        pushFlowVariable(name, FSLocationVariableType.INSTANCE, location);
     }
+
+    //    private BufferedDataTable copyFiles(final BufferedDataContainer container, final ReadPathAccessor readPathAccessor,
+    //        final WritePathAccessor writePathAccessor, final ExecutionContext exec)
+    //        throws IOException, CanceledExecutionException, InvalidSettingsException {
+    //        //Get paths
+    //        final FSPath rootPath = readPathAccessor.getRootPath(m_statusConsumer);
+    //        final FSPath destinationDir = writePathAccessor.getOutputPath(m_statusConsumer);
+    //        final FilterMode filterMode = m_config.getSourceFileChooserModel().getFilterModeModel().getFilterMode();
+    //        final List<FSPath> sourcePaths = getSourcePaths(readPathAccessor, filterMode);
+    //        m_statusConsumer.setWarningsIfRequired(this::setWarningMessage);
+    //        //Creates output directories if necessary
+    //        if (m_config.getDestinationFileChooserModel().isCreateMissingFolders()) {
+    //            FileCopier.createOutputDirectories(destinationDir);
+    //        } else {
+    //            CheckUtils.checkSetting(FSFiles.exists(destinationDir),
+    //                String.format("The specified destination folder %s does not exist.", destinationDir));
+    //        }
+    //
+    //        final PathRelativizer pathRelativizer = new PathRelativizerNonTableInput(rootPath,
+    //            m_config.getSettingsModelIncludeSourceFolder().getBooleanValue(), filterMode);
+    //
+    //        final FileStoreFactory fileStoreFactory = FileStoreFactory.createFileStoreFactory(exec);
+    //        final FileCopier fileCopier = new FileCopier(container::addRowToTable, m_config, fileStoreFactory);
+    //
+    //        long rowIdx = 0;
+    //        final long noOfFiles = sourcePaths.size();
+    //        for (Path sourceFilePath : sourcePaths) {
+    //            final Path destinationFilePath = destinationDir.resolve(pathRelativizer.apply(sourceFilePath));
+    //            fileCopier.copy(sourceFilePath, destinationFilePath, rowIdx);
+    //            final long copiedFiles = rowIdx + 1;
+    //            exec.setProgress(copiedFiles / (double)noOfFiles, () -> ("Copied files :" + copiedFiles));
+    //            exec.checkCanceled();
+    //            rowIdx++;
+    //        }
+    //
+    //        container.close();
+    //        fileStoreFactory.close();
+    //
+    //        return container.getTable();
+    //    }
 
     private List<FSPath> getSourcePaths(final ReadPathAccessor readPathAccessor, final FilterMode filterMode)
         throws IOException, InvalidSettingsException {
@@ -194,7 +194,8 @@ final class CopyMoveFilesNodeModel extends NodeModel {
         CheckUtils.checkSetting(!sourcePaths.isEmpty(),
             "No files available please select a folder which contains files");
         if (filterMode == FilterMode.FOLDER) {
-            final List<FSPath> pathsFromFolder = FSFiles.getFilePathsFromFolder(sourcePaths.get(0), false);
+            final List<FSPath> pathsFromFolder = FSFiles.getFilePathsFromFolder(sourcePaths.get(0),
+                m_config.getSourceFileChooserModel().getFilterMode() == FilterMode.FOLDER);
             sourcePaths = pathsFromFolder;
         }
         return sourcePaths;

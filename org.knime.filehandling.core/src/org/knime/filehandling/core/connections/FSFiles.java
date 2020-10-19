@@ -369,9 +369,8 @@ public final class FSFiles {
         Files.walkFileTree(source, new SimpleFileVisitor<Path>() {
 
             @Override
-            public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs)
-                throws IOException {
-                if (includeFolders) {
+            public FileVisitResult postVisitDirectory(final Path dir, final IOException exc) throws IOException {
+                if (includeFolders && !dir.equals(source)) {
                     paths.add((FSPath)dir);
                 }
                 return FileVisitResult.CONTINUE;

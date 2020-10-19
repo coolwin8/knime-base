@@ -50,23 +50,25 @@ package org.knime.base.node.io.filehandling.util.copymovefiles;
 
 import java.io.Closeable;
 import java.util.Iterator;
-import java.util.List;
+import java.util.function.BiConsumer;
 
 import org.apache.commons.lang3.tuple.Pair;
+import org.knime.filehandling.core.connections.FSLocation;
 import org.knime.filehandling.core.connections.FSPath;
 
 /**
  *
  * @author lars.schweikardt
  */
-public interface CloseableIterator extends Closeable, Iterator<List<Pair<FSPath, FSPath>>> {
+public interface CloseableIterator extends Closeable, Iterator<Pair<FSPath, FSPath>> {
 
     /**
      * TODO
+     *
      * @return
      */
     public long getNumberOfFiles();
 
+    public void pushFlowVariables(final BiConsumer<String, FSLocation> variableConsumer);
 
-    public Pair<FSPath, FSPath> getRootPaths() ;
 }

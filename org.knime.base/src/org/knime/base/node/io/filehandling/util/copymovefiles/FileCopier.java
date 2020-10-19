@@ -54,6 +54,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.function.Consumer;
 
 import org.knime.core.data.DataCell;
@@ -143,23 +144,31 @@ final class FileCopier {
         if (fileOverWritePolicy == FileOverwritePolicy.OVERWRITE) {
             return (s, d) -> {
                 final FileStatus fileStatus = FSFiles.exists(d) ? FileStatus.OVERWRITTEN : FileStatus.CREATED;
-                Files.copy(s, d, StandardCopyOption.REPLACE_EXISTING);
+
+                if (!Files.isDirectory(d)) {
+                    Files.copy(s, d, StandardCopyOption.REPLACE_EXISTING);
+                }
                 return fileStatus;
             };
         } else if (fileOverWritePolicy == FileOverwritePolicy.FAIL) {
             return (s, d) -> {
                 if (FSFiles.exists(d)) {
                     throw new FileAlreadyExistsException(d.toString());
+                } else {
+                    if (!Files.isDirectory(d)) {
+                        Files.copy(s, d);
+                    }
                 }
-                Files.copy(s, d);
                 return FileStatus.CREATED;
             };
         } else if (fileOverWritePolicy == FileOverwritePolicy.IGNORE) {
             return (s, d) -> {
                 if (FSFiles.exists(d)) {
-                    return FileStatus.UNMODIFIED;
+                    return Files.isDirectory(d) ? FileStatus.ALREADY_EXISTED : FileStatus.UNMODIFIED;
                 } else {
-                    Files.copy(s, d);
+                    if (!Files.isDirectory(d)) {
+                        Files.copy(s, d);
+                    }
                     return FileStatus.CREATED;
                 }
             };
@@ -179,22 +188,31 @@ final class FileCopier {
      */
     void copy(final Path sourcePath, final Path destinationPath, final long rowIdx) throws IOException {
 
-        //Create directories if they do not exist
-        createOutputDirectories(destinationPath.getParent());
         final FSLocationCell sourcePathCell = m_sourceFSLocationCellFactory.createCell(sourcePath.toString());
         final FSLocationCell destinationPathCell =
             m_destinationFSLocationCellFactory.createCell(destinationPath.toString());
 
+        System.out.println(sourcePath);
+        System.out.println(destinationPath);
+
+
+        if (Files.isDirectory(sourcePath)) {
+            createOutputDirectories(destinationPath);
+        } else {
+            createOutputDirectories(destinationPath.getParent());
+        }
+
         try {
             final FileStatus fileStatus = m_copyFunction.apply(sourcePath, destinationPath);
 
-            //Use of Files.deleteIfExists to mimic the behavior of Files.move
+            //Use of Files.deleteIfExists to mimic the behavior of Files.move<
             boolean deleted = false;
             if (m_isDeleteMode) {
                 deleted = Files.deleteIfExists(sourcePath);
             }
 
-            pushRow(rowIdx, sourcePathCell, destinationPathCell, fileStatus != FileStatus.UNMODIFIED, deleted,
+            pushRow(rowIdx, sourcePathCell, destinationPathCell,
+                EnumSet.of(FileStatus.CREATED, FileStatus.OVERWRITTEN).contains(fileStatus), deleted,
                 fileStatus.getText());
         } catch (FileAlreadyExistsException e) {
             if (m_fileOverWritePolicy == FileOverwritePolicy.FAIL) {
@@ -215,10 +233,13 @@ final class FileCopier {
      * @param path the path to the directory which needs to be created
      * @throws IOException
      */
-    static void createOutputDirectories(final Path path) throws IOException {
-        if (!FSFiles.exists(path)) {
+    static boolean createOutputDirectories(final Path path) throws IOException {
+        final boolean fileExist = FSFiles.exists(path);
+
+        if (!fileExist) {
             Files.createDirectories(path);
         }
+        return fileExist;
     }
 
     /**

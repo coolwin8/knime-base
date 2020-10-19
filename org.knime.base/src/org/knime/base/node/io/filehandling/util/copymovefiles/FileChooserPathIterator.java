@@ -49,21 +49,17 @@
 package org.knime.base.node.io.filehandling.util.copymovefiles;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import org.apache.commons.lang3.tuple.Pair;
-import org.knime.base.node.io.filehandling.util.PathRelativizer;
-import org.knime.base.node.io.filehandling.util.PathRelativizerNonTableInput;
 import org.knime.core.node.InvalidSettingsException;
-import org.knime.core.node.util.CheckUtils;
-import org.knime.filehandling.core.connections.FSFiles;
+import org.knime.filehandling.core.connections.FSLocation;
 import org.knime.filehandling.core.connections.FSPath;
 import org.knime.filehandling.core.defaultnodesettings.filechooser.reader.ReadPathAccessor;
 import org.knime.filehandling.core.defaultnodesettings.filechooser.writer.WritePathAccessor;
-import org.knime.filehandling.core.defaultnodesettings.filtermode.SettingsModelFilterMode.FilterMode;
 import org.knime.filehandling.core.defaultnodesettings.status.StatusMessage;
 
 /**
@@ -72,78 +68,33 @@ import org.knime.filehandling.core.defaultnodesettings.status.StatusMessage;
  */
 final class FileChooserPathIterator implements CloseableIterator {
 
+    private final Iterator<Pair<FSPath, FSPath>> m_pathPairIterator;
+
+    private final PathPairs m_pathPairs;
+
     private final CopyMoveFilesNodeConfig m_config;
-
-    private final Consumer<StatusMessage> m_statusConsumer;
-
-    private final PathRelativizer m_pathRelativizer;
-
-    private final Iterator<FSPath> m_srcIterator;
-
-    private final FSPath m_destinationPath;
-
-    private final FSPath m_sourcePath;
 
     private final long m_noOfFiles;
 
     FileChooserPathIterator(final CopyMoveFilesNodeConfig config, final Consumer<StatusMessage> statusMessageConsumer,
         final ReadPathAccessor readPathAccessor, final WritePathAccessor writePathAccessor)
         throws IOException, InvalidSettingsException {
+        m_pathPairs = new PathPairs(readPathAccessor, writePathAccessor, config, statusMessageConsumer);
         m_config = config;
-        m_statusConsumer = statusMessageConsumer;
-
-        final List<FSPath> pathList =
-            getSourcePaths(readPathAccessor, m_config.getSourceFileChooserModel().getFilterMode());
+        final List<Pair<FSPath, FSPath>> pathList = m_pathPairs.getPathPairList();
         m_noOfFiles = pathList.size();
-        m_srcIterator = pathList.iterator();
-        m_destinationPath = writePathAccessor.getOutputPath(statusMessageConsumer);
+        m_pathPairIterator = pathList.iterator();
 
-        if (m_config.getDestinationFileChooserModel().isCreateMissingFolders()) {
-            FileCopier.createOutputDirectories(m_destinationPath);
-        } else {
-            CheckUtils.checkSetting(FSFiles.exists(m_destinationPath),
-                String.format("The specified destination folder %s does not exist.", m_destinationPath));
-        }
-        m_sourcePath = readPathAccessor.getRootPath(statusMessageConsumer);
-
-        m_pathRelativizer = new PathRelativizerNonTableInput(m_sourcePath,
-            m_config.getSettingsModelIncludeSourceFolder().getBooleanValue(),
-            m_config.getSourceFileChooserModel().getFilterMode());
-
-    }
-
-    //TODO naming
-    @Override
-    public Pair<FSPath, FSPath> getRootPaths() {
-        return Pair.of(m_sourcePath, m_destinationPath);
-    }
-
-    //TODO static method somewhere..
-    private List<FSPath> getSourcePaths(final ReadPathAccessor readPathAccessor, final FilterMode filterMode)
-        throws IOException, InvalidSettingsException {
-        List<FSPath> sourcePaths = readPathAccessor.getFSPaths(m_statusConsumer);
-        CheckUtils.checkSetting(!sourcePaths.isEmpty(),
-            "No files available please select a folder which contains files");
-        if (filterMode == FilterMode.FOLDER) {
-            //TODo get root oder so
-            final List<FSPath> pathsFromFolder = FSFiles.getFilePathsFromFolder(sourcePaths.get(0), false);
-            sourcePaths = pathsFromFolder;
-        }
-        return sourcePaths;
     }
 
     @Override
     public boolean hasNext() {
-        return m_srcIterator.hasNext();
+        return m_pathPairIterator.hasNext();
     }
 
     @Override
-    public List<Pair<FSPath, FSPath>> next() {
-        //path only valid in try scope?
-        final FSPath srcPath = m_srcIterator.next();
-        final FSPath destPath = (FSPath)m_destinationPath.resolve(m_pathRelativizer.apply(srcPath));
-
-        return Collections.singletonList(Pair.of(srcPath, destPath));
+    public Pair<FSPath, FSPath> next() {
+        return m_pathPairIterator.next();
     }
 
     @Override
@@ -154,5 +105,12 @@ final class FileChooserPathIterator implements CloseableIterator {
     @Override
     public long getNumberOfFiles() {
         return m_noOfFiles;
+    }
+
+    @Override
+    public void pushFlowVariables(final BiConsumer<String, FSLocation> variableConsumer) {
+        variableConsumer.accept("source_path", m_config.getSourceFileChooserModel().getLocation());
+        variableConsumer.accept("destination_path", m_config.getDestinationFileChooserModel().getLocation());
+
     }
 }

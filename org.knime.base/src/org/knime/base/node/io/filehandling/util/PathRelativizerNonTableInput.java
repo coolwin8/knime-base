@@ -54,8 +54,8 @@ import org.knime.filehandling.core.defaultnodesettings.filtermode.SettingsModelF
 
 /**
  * The {@link PathRelativizer} for non table input nodes relativizes a path based on the {@link FilterMode} and whether
- * the includeParentFolder is checked or not and returns a relativized string representation of a file {@link Path} based on a
- * root {@link Path}.
+ * the includeParentFolder is checked or not and returns a relativized string representation of a file {@link Path}
+ * based on a root {@link Path}.
  *
  * @author Lars Schweikardt, KNIME GmbH, Konstanz, Germany
  */
@@ -65,34 +65,24 @@ public final class PathRelativizerNonTableInput implements PathRelativizer {
 
     private final Path m_rootPath;
 
-    private final FilterMode m_filterMode;
-
     /**
      * Constructor.
      *
      * @param rootPath
      * @param includeParentFolder
-     * @param filterMode
      */
-    public PathRelativizerNonTableInput(final Path rootPath, final boolean includeParentFolder,
-        final FilterMode filterMode) {
+    public PathRelativizerNonTableInput(final Path rootPath, final boolean includeParentFolder) {
         m_rootPath = rootPath.toAbsolutePath().normalize();
         m_includeParentFolder = includeParentFolder;
-        m_filterMode = filterMode;
     }
 
     @Override
     public String apply(final Path sourceFilePath) {
-        if (m_filterMode == FilterMode.FILE) {
-            return m_rootPath.getFileName().toString();
+        final Path sourcePath = sourceFilePath.toAbsolutePath().normalize();
+        if (m_includeParentFolder && m_rootPath.getParent() != null) {
+            return m_rootPath.getParent().relativize(sourcePath).toString();
         } else {
-            final Path sourcePath = sourceFilePath.toAbsolutePath().normalize();
-            if (m_includeParentFolder) {
-                return m_rootPath.getParent() == null ? m_rootPath.getRoot().relativize(sourcePath).toString()
-                    : m_rootPath.getParent().relativize(sourcePath).toString();
-            } else {
-                return m_rootPath.relativize(sourcePath).toString();
-            }
+            return m_rootPath.relativize(sourcePath).toString();
         }
     }
 }

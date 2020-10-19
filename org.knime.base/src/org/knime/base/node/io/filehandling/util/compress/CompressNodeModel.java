@@ -200,7 +200,7 @@ final class CompressNodeModel extends NodeModel {
                 final boolean includeParent = m_config.includeParentFolder();
 
                 final PathRelativizer pathRelativizer =
-                    new PathRelativizerNonTableInput(rootPath, includeParent, filterMode);
+                    new PathRelativizerNonTableInput(rootPath, includeParent);
 
                 final long numOfFiles = inputPaths.size();
                 long fileCounter = 0;
