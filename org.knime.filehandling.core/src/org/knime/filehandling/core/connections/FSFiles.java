@@ -356,32 +356,43 @@ public final class FSFiles {
      * Returns a {@link List} of {@link FSPath}s of a all files in a single folder.
      *
      * @param source the {@link Path} of the source folder
+     * @param includeFolders flag to include folder {@link Path}s or not
      * @return a {@link List} of {@link Path} from files in a folder
      * @throws IOException
      */
-    public static List<FSPath> getFilePathsFromFolder(final FSPath source)
+    public static List<FSPath> getFilePathsFromFolder(final FSPath source, final boolean includeFolders)
         throws IOException {
         final List<FSPath> paths = new ArrayList<>();
         final BasicFileAttributes basicAttrs = Files.readAttributes(source, BasicFileAttributes.class);
         CheckUtils.checkArgument(basicAttrs.isDirectory(), "%s is not a folder. Please specify a folder.", source);
 
         Files.walkFileTree(source, new SimpleFileVisitor<Path>() {
+
+            @Override
+            public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs)
+                throws IOException {
+                if (includeFolders) {
+                    paths.add((FSPath)dir);
+                }
+                return FileVisitResult.CONTINUE;
+            }
+
             @Override
             public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) throws IOException {
                 paths.add((FSPath)file);
                 return FileVisitResult.CONTINUE;
             }
         });
+        paths.sort(Path::compareTo);
         return paths;
     }
-
 
     /**
      * Checks whether the given path is a non-empty directory.
      *
      * @param path The path to check.
-     * @return true if the given path is a non-empty directory, false otherwise (if it does not exist, is not a directory, or is an
-     *         empty directory).
+     * @return true if the given path is a non-empty directory, false otherwise (if it does not exist, is not a
+     *         directory, or is an empty directory).
      * @throws IOException if something went wrong while accessing the directory contents
      */
     public static boolean isNonEmptyDirectory(final FSPath path) throws IOException {
@@ -413,7 +424,8 @@ public final class FSFiles {
      * @throws IOException
      * @throws IllegalArgumentException if the given source path is not a directory.
      */
-    public static void copyRecursively(final FSPath source, final FSPath target, final CopyOption... options) throws IOException {
+    public static void copyRecursively(final FSPath source, final FSPath target, final CopyOption... options)
+        throws IOException {
         if (!Files.readAttributes(source, BasicFileAttributes.class).isDirectory()) {
             throw new IllegalArgumentException("Only directories can be copied recursively");
         }
@@ -436,7 +448,7 @@ public final class FSFiles {
             m_target = target;
             m_options = options;
             m_replaceExisting = Arrays.stream(options) //
-                    .anyMatch(o->  o == StandardCopyOption.REPLACE_EXISTING);
+                .anyMatch(o -> o == StandardCopyOption.REPLACE_EXISTING);
         }
 
         @Override

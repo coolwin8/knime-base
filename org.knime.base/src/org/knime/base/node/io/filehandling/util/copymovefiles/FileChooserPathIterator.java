@@ -125,7 +125,8 @@ final class FileChooserPathIterator implements CloseableIterator {
         CheckUtils.checkSetting(!sourcePaths.isEmpty(),
             "No files available please select a folder which contains files");
         if (filterMode == FilterMode.FOLDER) {
-            final List<FSPath> pathsFromFolder = FSFiles.getFilePathsFromFolder(sourcePaths.get(0));
+            //TODo get root oder so
+            final List<FSPath> pathsFromFolder = FSFiles.getFilePathsFromFolder(sourcePaths.get(0), false);
             sourcePaths = pathsFromFolder;
         }
         return sourcePaths;

@@ -195,7 +195,7 @@ final class CopyMoveFilesStatusMessageReporter implements StatusMessageReporter 
     private List<FSPath> getSourcePaths(final PriorityStatusConsumer consumerReader,
         final ReadPathAccessor readPathAccessor) throws IOException, InvalidSettingsException {
         if (m_settingsReader.getFilterModeModel().getFilterMode() == FilterMode.FOLDER) {
-            return FSFiles.getFilePathsFromFolder(readPathAccessor.getRootPath(consumerReader));
+            return FSFiles.getFilePathsFromFolder(readPathAccessor.getRootPath(consumerReader), false);
         } else {
             return readPathAccessor.getFSPaths(consumerReader);
         }

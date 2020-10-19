@@ -76,7 +76,7 @@ final class MyEntry implements AutoCloseable {
         final FSPath path = m_pathProvider.getPath();
 
         if (Files.isDirectory(path)) {
-            for (FSPath filePath : FSFiles.getFilePathsFromFolder(path)) {
+            for (FSPath filePath : FSFiles.getFilePathsFromFolder(path, false)) {
                 paths.add(filePath);
             }
         } else {
