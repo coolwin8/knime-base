@@ -54,6 +54,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.zip.ZipException;
 
+import org.knime.base.node.io.filehandling.csv.reader.api.NewLineUnifyingInputStream;
 import org.knime.core.node.NodeLogger;
 import org.knime.filehandling.core.connections.FSFiles;
 import org.knime.filehandling.core.util.FileCompressionUtils;
@@ -112,15 +113,16 @@ public final class CompressionAwareCountingInputStream extends InputStream {
 
         if (FileCompressionUtils.mightBeCompressed(path)) {
             try {
-                m_inputStream = FileCompressionUtils.createDecompressedStream(m_countingStream);
+                m_inputStream =
+                    new NewLineUnifyingInputStream(FileCompressionUtils.createDecompressedStream(m_countingStream));
             } catch (ZipException e) {
                 LOGGER.debug(e);
                 m_countingStream.close();
                 m_countingStream = new CountingInputStream(Files.newInputStream(path));
-                m_inputStream = m_countingStream;
+                m_inputStream = new NewLineUnifyingInputStream(m_countingStream);
             }
         } else {
-            m_inputStream = m_countingStream;
+            m_inputStream = new NewLineUnifyingInputStream(m_countingStream);
         }
     }
 

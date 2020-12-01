@@ -58,7 +58,7 @@ import org.knime.filehandling.core.connections.FSFiles;
  *
  * @author Mark Ortmann, KNIME GmbH, Berlin, Germany
  */
-final class NewLineUnifyingInputStream extends InputStream {
+public final class NewLineUnifyingInputStream extends InputStream {
 
     private final InputStream m_iS;
 
@@ -66,11 +66,11 @@ final class NewLineUnifyingInputStream extends InputStream {
     private boolean skipLF = false;
 
     @SuppressWarnings("resource")
-    NewLineUnifyingInputStream(final Path path) throws IOException {
+    public NewLineUnifyingInputStream(final Path path) throws IOException {
         this(FSFiles.newInputStream(path));
     }
 
-    NewLineUnifyingInputStream(final InputStream iS) {
+    public NewLineUnifyingInputStream(final InputStream iS) {
         m_iS = iS;
     }
 
@@ -83,7 +83,7 @@ final class NewLineUnifyingInputStream extends InputStream {
                 read = m_iS.read();
             }
         }
-        if (read != -1 && read == '\r') {
+        if (read == '\r') {
             skipLF = true;
             return '\n';
         }

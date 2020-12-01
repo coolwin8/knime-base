@@ -224,7 +224,7 @@ public final class CSVTableReader implements TableReader<CSVTableReaderConfig, C
          */
         @SuppressWarnings("resource") // The input stream is closed by the close method
         CsvRead(final Path path, final TableReadConfig<CSVTableReaderConfig> config) throws IOException {
-            this(new CompressionAwareCountingInputStream(new NewLineUnifyingInputStream(path)) //NOSONAR
+            this(new CompressionAwareCountingInputStream(path) //NOSONAR
                 , Files.size(path), path, config);
         }
 
