@@ -50,6 +50,7 @@ package org.knime.filehandling.core.node.table.reader.config;
 
 import java.util.List;
 
+import org.knime.filehandling.core.node.table.reader.SourceGroup;
 import org.knime.filehandling.core.node.table.reader.SpecMergeMode;
 
 /**
@@ -117,8 +118,8 @@ public interface MultiTableReadConfig<C extends ReaderSpecificConfig<C>> {
      * @return {@code true} if the {@link DefaultTableSpecConfig} is present and has been created with the provided
      *         parameters
      */
-    default boolean isConfiguredWith(final String rootItem, final List<String> items) {
-        return hasTableSpecConfig() && getTableSpecConfig().isConfiguredWith(rootItem, items);
+    default boolean isConfiguredWith(final SourceGroup<String> sourceGroup) {
+        return hasTableSpecConfig() && getTableSpecConfig().isConfiguredWith(sourceGroup);
     }
 
 }

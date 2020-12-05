@@ -54,6 +54,7 @@ import org.knime.core.data.DataTableSpec;
 import org.knime.core.data.DataType;
 import org.knime.core.data.convert.map.ProductionPath;
 import org.knime.core.node.NodeSettingsWO;
+import org.knime.filehandling.core.node.table.reader.SourceGroup;
 import org.knime.filehandling.core.node.table.reader.selector.ColumnFilterMode;
 import org.knime.filehandling.core.node.table.reader.selector.TableTransformation;
 import org.knime.filehandling.core.node.table.reader.spec.ReaderTableSpec;
@@ -82,7 +83,7 @@ public interface TableSpecConfig {
      * @param items the items for which this {@link DefaultTableSpecConfig} has been configured
      * @return {@code true} if this config has been created with the provided parameters
      */
-    boolean isConfiguredWith(String rootItem, List<String> items);
+    boolean isConfiguredWith(SourceGroup<String> sourceGroup);
 
     /**
      * Returns {@code true} if this {@link DefaultTableSpecConfig} has been created using the provided <b>rootItem</b>,
@@ -93,16 +94,6 @@ public interface TableSpecConfig {
      *         {@code false} otherwise
      */
     boolean isConfiguredWith(String rootItem);
-
-    /**
-     * Returns {@code true} if this {@link DefaultTableSpecConfig} has been created using the provided <b>items</b>,
-     * {@code false} otherwise.
-     *
-     * @param items the items to test if they have been used to create this {@link DefaultTableSpecConfig}
-     * @return {@code true} if the {@link DefaultTableSpecConfig} has been created using the provided <b>items</b>,
-     *         {@code false} otherwise
-     */
-    boolean isConfiguredWith(List<String> items);
 
     /**
      * Returns the {@link DataTableSpec}.

@@ -50,6 +50,7 @@ package org.knime.filehandling.core.node.table.reader.util;
 
 import java.util.Collection;
 
+import org.knime.filehandling.core.node.table.reader.SourceGroup;
 import org.knime.filehandling.core.node.table.reader.selector.RawSpec;
 import org.knime.filehandling.core.node.table.reader.selector.TableTransformation;
 import org.knime.filehandling.core.node.table.reader.spec.ReaderTableSpec;
@@ -74,7 +75,7 @@ public interface StagedMultiTableRead<I, T> {
      * @param items the collection of items, {@link #isValidFor(Collection)} must return {@code true} for it
      * @return a {@link MultiTableRead} that uses the defaults
      */
-    MultiTableRead withoutTransformation(Collection<I> items);
+    MultiTableRead withoutTransformation(final SourceGroup<I> sourceGroup);
 
     /**
      * Creates a {@link MultiTableRead} using the given {@link TableTransformation}.<br>
@@ -85,7 +86,7 @@ public interface StagedMultiTableRead<I, T> {
      * @param selectorModel specifies the type mapping, column renaming, filtering and reordering
      * @return a {@link MultiTableRead} using the provided {@link TableTransformation}
      */
-    MultiTableRead withTransformation(Collection<I> items, TableTransformation<T> selectorModel);
+    MultiTableRead withTransformation(final SourceGroup<I> sourceGroup, TableTransformation<T> selectorModel);
 
     /**
      * Returns the raw {@link ReaderTableSpec} consisting of {@link TypedReaderColumnSpec}. Raw means before any type
@@ -101,6 +102,6 @@ public interface StagedMultiTableRead<I, T> {
      * @param items to read from
      * @return {@code true} if the provided <b>items</b> are valid
      */
-    boolean isValidFor(Collection<I> items);
+    boolean isValidFor(final SourceGroup<I> sourceGroup);
 
 }
