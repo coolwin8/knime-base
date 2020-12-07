@@ -130,12 +130,26 @@ public final class DefaultTableSpecConfigSerializer {
 
     private final Object m_mostGenericType;
 
+    /**
+     * Constructor.
+     *
+     * @param productionPathLoader the {@link ProductionPathLoader} to use for loading {@link ProductionPath
+     *            ProductionPaths}
+     * @param mostGenericType the most generic type in the hierarchy (used only for workflows created in 4.2)
+     */
     public DefaultTableSpecConfigSerializer(final ProductionPathLoader productionPathLoader,
         final Object mostGenericType) {
         m_productionPathLoader = productionPathLoader;
         m_mostGenericType = mostGenericType;
     }
 
+    /**
+     * Constructor.
+     *
+     * @param producerRegistry the {@link ProducerRegistry} to use for loading {@link ProductionPath
+     *            ProductionPaths}
+     * @param mostGenericType the most generic type in the hierarchy (used only for workflows created in 4.2)
+     */
     public DefaultTableSpecConfigSerializer(final ProducerRegistry<?, ?> producerRegistry,
         final Object mostGenericType) {
         this(new DefaultProductionPathLoader(producerRegistry), mostGenericType);
@@ -404,7 +418,7 @@ public final class DefaultTableSpecConfigSerializer {
                     + mostGenericExternalType));
     }
 
-    public void save(final DefaultTableSpecConfig config, final NodeSettingsWO settings) {
+    static void save(final DefaultTableSpecConfig config, final NodeSettingsWO settings) {
         settings.addString(CFG_ROOT_PATH, config.getRootItem());
         config.getFullDataSpec().save(settings.addNodeSettings(CFG_DATATABLE_SPEC));
         settings.addStringArray(CFG_FILE_PATHS, config.getItems().toArray(new String[0]));
@@ -419,7 +433,7 @@ public final class DefaultTableSpecConfigSerializer {
         settings.addString(CFG_COLUMN_FILTER_MODE, config.getColumnFilterMode().name());
     }
 
-    private void saveProductionPaths(final ProductionPath[] prodPaths, final NodeSettingsWO settings) {
+    private static void saveProductionPaths(final ProductionPath[] prodPaths, final NodeSettingsWO settings) {
         int i = 0;
         for (final ProductionPath pP : prodPaths) {
             SerializeUtil.storeProductionPath(pP, settings, CFG_PRODUCTION_PATH + i);
@@ -428,7 +442,7 @@ public final class DefaultTableSpecConfigSerializer {
         settings.addInt(CFG_NUM_PRODUCTION_PATHS, i);
     }
 
-    private void saveIndividualSpecs(final Collection<ReaderTableSpec<?>> individualSpecs,
+    private static void saveIndividualSpecs(final Collection<ReaderTableSpec<?>> individualSpecs,
         final NodeSettingsWO settings) {
         int i = 0;
         for (final ReaderTableSpec<? extends ReaderColumnSpec> readerTableSpec : individualSpecs) {

@@ -418,7 +418,7 @@ public final class DefaultTableSpecConfig implements TableSpecConfig {
 
     @Override
     public void save(final NodeSettingsWO settings) {
-        new DefaultTableSpecConfigSerializer((ProductionPathLoader)null, null).save(this, settings);
+        DefaultTableSpecConfigSerializer.save(this, settings);
     }
 
     /**
