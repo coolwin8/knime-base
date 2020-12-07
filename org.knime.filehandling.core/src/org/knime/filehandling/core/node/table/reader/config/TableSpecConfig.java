@@ -79,8 +79,7 @@ public interface TableSpecConfig {
      * Returns {@code true} if this config has been created with the provided <b>rootItem</b> and {@link List} of
      * items.
      *
-     * @param rootItem string representation of the root item
-     * @param items the items for which this {@link DefaultTableSpecConfig} has been configured
+     * @param sourceGroup to check
      * @return {@code true} if this config has been created with the provided parameters
      */
     boolean isConfiguredWith(SourceGroup<String> sourceGroup);

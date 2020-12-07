@@ -113,8 +113,7 @@ public interface MultiTableReadConfig<C extends ReaderSpecificConfig<C>> {
      * Returns {@code true} if the {@link DefaultTableSpecConfig} has been created with the provided <b>rootItem</b> and
      * {@link List} of items.
      *
-     * @param rootItem string representation of the root item
-     * @param items the items for which the {@link DefaultTableSpecConfig} has been configured
+     * @param sourceGroup to check
      * @return {@code true} if the {@link DefaultTableSpecConfig} is present and has been created with the provided
      *         parameters
      */

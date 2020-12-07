@@ -48,8 +48,6 @@
  */
 package org.knime.filehandling.core.node.table.reader.util;
 
-import java.util.Collection;
-
 import org.knime.filehandling.core.node.table.reader.SourceGroup;
 import org.knime.filehandling.core.node.table.reader.selector.RawSpec;
 import org.knime.filehandling.core.node.table.reader.selector.TableTransformation;
@@ -72,7 +70,7 @@ public interface StagedMultiTableRead<I, T> {
      * Note: the item collection is passed as argument because for paths the file system might have been closed in the
      * meantime.
      *
-     * @param items the collection of items, {@link #isValidFor(Collection)} must return {@code true} for it
+     * @param sourceGroup the {@link SourceGroup} to read from
      * @return a {@link MultiTableRead} that uses the defaults
      */
     MultiTableRead withoutTransformation(final SourceGroup<I> sourceGroup);
@@ -82,7 +80,7 @@ public interface StagedMultiTableRead<I, T> {
      * Note: the item collection is passed as argument because for paths the file system might have been closed in the
      * meantime.
      *
-     * @param items the collection of items, {@link #isValidFor(Collection)} must return {@code true} for it
+     * @param sourceGroup the {@link SourceGroup} to read from
      * @param selectorModel specifies the type mapping, column renaming, filtering and reordering
      * @return a {@link MultiTableRead} using the provided {@link TableTransformation}
      */
@@ -99,8 +97,8 @@ public interface StagedMultiTableRead<I, T> {
     /**
      * Checks if the provided <b>items</b> match the items used to instantiate this MultiTableRead.
      *
-     * @param items to read from
-     * @return {@code true} if the provided <b>items</b> are valid
+     * @param sourceGroup the {@link SourceGroup} to read from
+     * @return {@code true} if the provided {@link SourceGroup} was used to create this {@link StagedMultiTableRead}
      */
     boolean isValidFor(final SourceGroup<I> sourceGroup);
 
