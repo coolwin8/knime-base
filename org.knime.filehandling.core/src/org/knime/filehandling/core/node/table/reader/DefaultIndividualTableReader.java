@@ -132,7 +132,6 @@ public final class DefaultIndividualTableReader<I, V> implements IndividualTable
         for (long i = 1; (next = read.next()) != null; i++) {
             progress.checkCanceled();
             final long finalI = i;
-            // TODO discuss how to report progress if rows are filtered
             progress.setProgress(read.getProgress() / doubleSize, () -> String.format("Reading row %s", finalI));
             output.push(toRow(next));
         }
