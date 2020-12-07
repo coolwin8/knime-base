@@ -53,7 +53,6 @@ import java.util.Optional;
 
 import org.knime.filehandling.core.node.table.reader.randomaccess.RandomAccessible;
 import org.knime.filehandling.core.node.table.reader.read.Read;
-import org.knime.filehandling.core.node.table.reader.read.Read;
 
 /**
  * A read that extracts the row containing the column headers from the provided {@link Read source}.

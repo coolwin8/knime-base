@@ -57,7 +57,6 @@ import org.knime.core.node.NodeLogger;
 import org.knime.filehandling.core.node.table.reader.preview.PreviewExecutionMonitor;
 import org.knime.filehandling.core.node.table.reader.randomaccess.RandomAccessible;
 import org.knime.filehandling.core.node.table.reader.read.Read;
-import org.knime.filehandling.core.node.table.reader.read.Read;
 import org.knime.filehandling.core.util.CheckedExceptionFunction;
 
 /**

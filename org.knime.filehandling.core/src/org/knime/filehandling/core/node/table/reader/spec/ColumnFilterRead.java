@@ -54,7 +54,6 @@ import org.knime.core.node.util.CheckUtils;
 import org.knime.filehandling.core.node.table.reader.randomaccess.RandomAccessible;
 import org.knime.filehandling.core.node.table.reader.read.AbstractReadDecorator;
 import org.knime.filehandling.core.node.table.reader.read.Read;
-import org.knime.filehandling.core.node.table.reader.read.Read;
 
 /**
  * A {@link Read} that filters an individual column.
@@ -81,6 +80,7 @@ class ColumnFilterRead<I, V> extends AbstractReadDecorator<I, V> {
 
     @Override
     public RandomAccessible<V> next() throws IOException {
+        @SuppressWarnings("resource")
         RandomAccessible<V> next = getSource().next();
         if (next != null) {
             m_filterDecorator.setDecoratee(next);

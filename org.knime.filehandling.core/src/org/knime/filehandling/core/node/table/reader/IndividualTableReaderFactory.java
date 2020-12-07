@@ -62,7 +62,6 @@ import org.knime.filehandling.core.node.table.reader.rowkey.RowKeyGenerator;
 import org.knime.filehandling.core.node.table.reader.selector.ColumnTransformation;
 import org.knime.filehandling.core.node.table.reader.spec.TypedReaderTableSpec;
 import org.knime.filehandling.core.node.table.reader.type.mapping.TypeMapper;
-import org.knime.filehandling.core.node.table.reader.util.IndividualTableReader;
 import org.knime.filehandling.core.node.table.reader.util.IndexMapper;
 import org.knime.filehandling.core.node.table.reader.util.IndexMapperFactory;
 import org.knime.filehandling.core.node.table.reader.util.IndividualTableReader;

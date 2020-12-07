@@ -74,6 +74,7 @@ class CheckSameSizeRead<I, V> extends AbstractReadDecorator<I, V> {
 
     @Override
     public RandomAccessible<V> next() throws IOException {
+        @SuppressWarnings("resource")
         final RandomAccessible<V> current = getSource().next();
         if (m_size == -1 && current != null) {
             m_size = current.size();

@@ -221,7 +221,7 @@ public final class TableSpecGuesser<I, T, V> {
                 setProgress(exec, previewExec, rowCount, progress);
 
             }
-        } catch (CanceledExecutionException es) {
+        } catch (CanceledExecutionException es) {//NOSONAR
             // do nothing, just stop
         } catch (Exception e) {
             if (previewExec != null) {

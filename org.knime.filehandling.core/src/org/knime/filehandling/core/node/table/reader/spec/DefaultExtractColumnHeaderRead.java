@@ -56,7 +56,6 @@ import org.knime.core.node.util.CheckUtils;
 import org.knime.filehandling.core.node.table.reader.config.TableReadConfig;
 import org.knime.filehandling.core.node.table.reader.randomaccess.RandomAccessible;
 import org.knime.filehandling.core.node.table.reader.read.Read;
-import org.knime.filehandling.core.node.table.reader.read.Read;
 import org.knime.filehandling.core.node.table.reader.read.ReadUtils;
 
 /**
@@ -67,27 +66,30 @@ import org.knime.filehandling.core.node.table.reader.read.ReadUtils;
  * @author Tobias Koetter, KNIME GmbH, Konstanz, Germany
  * @param <I> the item type to read from
  * @param <V> the value type
+ * @noreference non-public API
+ * @noinstantiate non-public API
  */
-public class DefaultExtractColumnHeaderRead<I, V> implements ExtractColumnHeaderRead<I, V> {
+public final class DefaultExtractColumnHeaderRead<I, V> implements ExtractColumnHeaderRead<I, V> {
 
     /** The underlying read. */
-    protected final Read<I, V> m_read;
+    private final Read<I, V> m_read;
     /** The column index containing the header. */
-    protected final long m_columnHeaderIdx;
+    private final long m_columnHeaderIdx;
     /** The number of rows to read. */
-    protected final long m_numRowsToRead;
+    private final long m_numRowsToRead;
     /** The {@link RandomAccessible} holding the column header. */
-    protected Optional<RandomAccessible<V>> m_columnHeader;
+    private Optional<RandomAccessible<V>> m_columnHeader;
     /** The number of rows returned, i.e., the number of next calls on {@link #m_read}. */
     private long m_numRowsReturned = 0;
     /** The number of rows to skip. */
-    protected long m_numRowsToSkip;
+    private long m_numRowsToSkip;
 
     /**
      * Constructor.
      * @param source {@link Read} to read from
      * @param config TableReadConfig to use
      */
+    @SuppressWarnings("resource")
     public DefaultExtractColumnHeaderRead(final Read<I, V> source, final TableReadConfig<?> config) {
         // get the column index
         long colHeaderIdx;
@@ -158,7 +160,7 @@ public class DefaultExtractColumnHeaderRead<I, V> implements ExtractColumnHeader
             /* Can only happen if the number of rows to skip was initially greater than the column header index.
              * Note that the Constructor ensure that m_columnHeaderIdx == 0 in this case.
              */
-            while (m_numRowsToSkip-- > 0) {
+            while (m_numRowsToSkip-- > 0) {// NOSONAR
                 m_read.next();
             }
         }
