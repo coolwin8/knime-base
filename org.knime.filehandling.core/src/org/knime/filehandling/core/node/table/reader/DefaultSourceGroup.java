@@ -62,13 +62,18 @@ import java.util.stream.Stream;
  * @noinstantiate non-public API
  * @noreference non-public API
  */
-// TODO move into separate package
 public final class DefaultSourceGroup<I> implements SourceGroup<I> {
 
     private final List<I> m_items;
 
     private final String m_id;
 
+    /**
+     * Constructor.
+     *
+     * @param id used to identify this source group
+     * @param items the source items
+     */
     public DefaultSourceGroup(final String id, final Collection<I> items) {
         m_items = new ArrayList<>(items);
         m_id = id;
