@@ -51,16 +51,29 @@ package org.knime.filehandling.core.node.table.reader;
 import java.util.stream.Stream;
 
 /**
+ * A SourceGroup represents the inputs to a read process.<br>
+ * It consists of an ID that can be used to distinguish SourceGroups and a number of source items to read from.
  *
  * @author Adrian Nembach, KNIME GmbH, Konstanz, Germany
  * @param <I> the type of source items
  */
 public interface SourceGroup<I> extends Iterable<I> {
 
+    /**
+     * Getter for the ID.
+     *
+     * @return the ID identifying this source group
+     */
     String getID();
 
+    /**
+     * @return a {@link Stream} of the source items
+     */
     Stream<I> stream();
 
+    /**
+     * @return the number of source items in this SourceGroup
+     */
     int size();
 
 }
