@@ -211,21 +211,18 @@ final class TableReaderNodeModel<I, C extends ReaderSpecificConfig<C>> extends N
     @Override
     protected void saveSettingsTo(final NodeSettingsWO settings) {
         m_config.saveInModel(settings);
-        // FIXME: the path settings should become part of the config (AP-14460)
         m_sourceSettings.saveSettingsTo(SettingsUtils.getOrAdd(settings, SettingsUtils.CFG_SETTINGS_TAB));
     }
 
     @Override
     protected void validateSettings(final NodeSettingsRO settings) throws InvalidSettingsException {
         m_config.validate(settings);
-        // FIXME: the path settings should become part of the config (AP-14460)
         m_sourceSettings.validateSettings(settings.getNodeSettings(SettingsUtils.CFG_SETTINGS_TAB));
     }
 
     @Override
     protected void loadValidatedSettingsFrom(final NodeSettingsRO settings) throws InvalidSettingsException {
         m_config.loadInModel(settings);
-        // FIXME: the path settings should become part of the config (AP-14460)
         m_sourceSettings.loadSettingsFrom(settings.getNodeSettings(SettingsUtils.CFG_SETTINGS_TAB));
     }
 
