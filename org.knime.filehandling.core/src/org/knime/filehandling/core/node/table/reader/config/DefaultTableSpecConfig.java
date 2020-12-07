@@ -341,6 +341,13 @@ public final class DefaultTableSpecConfig implements TableSpecConfig {
         new DefaultTableSpecConfigSerializer(pathLoader, null).validate(settings);
     }
 
+    /**
+     * Checks that this configuration can be loaded from the provided settings.
+     *
+     * @param settings to validate
+     * @param registry the {@link ProducerRegistry} used to restore the {@link ProductionPath ProductionPaths}
+     * @throws InvalidSettingsException if the settings are invalid
+     */
     public static void validate(final NodeSettingsRO settings, final ProducerRegistry<?, ?> registry)
         throws InvalidSettingsException {
         new DefaultTableSpecConfigSerializer(registry, null).validate(settings);
@@ -431,6 +438,17 @@ public final class DefaultTableSpecConfig implements TableSpecConfig {
         return new DefaultTableSpecConfigSerializer(pathLoader, mostGenericExternalType).load(settings, specMergeModeOld);
     }
 
+    /**
+    * De-serializes the {@link DefaultTableSpecConfig} previously written to the given settings.
+    *
+    * @param settings containing the serialized {@link DefaultTableSpecConfig}
+     * @param registry the {@link ProducerRegistry} for restoring {@link ProductionPath ProductionPaths}
+    * @param mostGenericExternalType used as default type for columns that were previously (4.2) filtered out
+    * @param specMergeModeOld for workflows stored with 4.2, should be {@code null} for workflows stored with 4.3 and
+    *            later
+    * @return the de-serialized {@link DefaultTableSpecConfig}
+    * @throws InvalidSettingsException - if the settings do not exists / cannot be loaded
+    */
     public static DefaultTableSpecConfig load(final NodeSettingsRO settings,
         final ProducerRegistry<?, ?> registry, final Object mostGenericExternalType,
         @SuppressWarnings("deprecation") final SpecMergeMode specMergeModeOld) throws InvalidSettingsException {
