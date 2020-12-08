@@ -83,8 +83,11 @@ import org.knime.filehandling.core.util.SettingsUtils;
  * Generic implementation of a Reader node that reads tables.
  *
  * @author Adrian Nembach, KNIME GmbH, Konstanz, Germany
+ * @param <C> the type of {@link ReaderSpecificConfig}
+ * @noreference non-public API
+ * @noimplement non-public API
  */
-final class TableReaderNodeModel<C extends ReaderSpecificConfig<C>> extends NodeModel {
+public class TableReaderNodeModel<C extends ReaderSpecificConfig<C>> extends NodeModel {
 
     static final int FS_INPUT_PORT = 0;
 
@@ -100,7 +103,6 @@ final class TableReaderNodeModel<C extends ReaderSpecificConfig<C>> extends Node
      * that the specs are recalculated for each generated reader.
      */
     private final MultiTableReader<C> m_tableReader;
-
 
     /**
      * Constructs a node model with no inputs and one output.
@@ -118,7 +120,7 @@ final class TableReaderNodeModel<C extends ReaderSpecificConfig<C>> extends Node
     }
 
     /**
-     * Constructs a node model with no inputs and one output.
+     * Constructs a node model with the inputs and outputs specified in the passed {@link PortsConfiguration}.
      *
      * @param config storing the user settings
      * @param pathSettingsModel storing the paths selected by the user
@@ -126,8 +128,7 @@ final class TableReaderNodeModel<C extends ReaderSpecificConfig<C>> extends Node
      * @param portsConfig determines the in and outports.
      */
     protected TableReaderNodeModel(final StorableMultiTableReadConfig<C> config, final PathSettings pathSettingsModel,
-        final MultiTableReader<C> tableReader,
-        final PortsConfiguration portsConfig) {
+        final MultiTableReader<C> tableReader, final PortsConfiguration portsConfig) {
         super(portsConfig.getInputPorts(), portsConfig.getOutputPorts());
         m_config = config;
         m_pathSettings = pathSettingsModel;
@@ -229,6 +230,15 @@ final class TableReaderNodeModel<C extends ReaderSpecificConfig<C>> extends Node
     @Override
     protected void reset() {
         m_tableReader.reset();
+    }
+
+    /**
+     * Returns the config.
+     *
+     * @return the config
+     */
+    protected final StorableMultiTableReadConfig<C> getConfig() {
+        return m_config;
     }
 
 }

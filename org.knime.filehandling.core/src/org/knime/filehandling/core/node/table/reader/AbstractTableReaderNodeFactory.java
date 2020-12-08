@@ -75,7 +75,7 @@ public abstract class AbstractTableReaderNodeFactory<C extends ReaderSpecificCon
     extends GenericAbstractTableReaderNodeFactory<Path, C, T, V> {
 
     @Override
-    public final TableReaderNodeModel<C> createNodeModel(final NodeCreationConfiguration creationConfig) {
+    public TableReaderNodeModel<C> createNodeModel(final NodeCreationConfiguration creationConfig) {
         final StorableMultiTableReadConfig<C> config = createConfig(creationConfig);
         final PathSettings pathSettings = createPathSettings(creationConfig);
         final MultiTableReader<C> reader = createMultiTableReader();
@@ -100,7 +100,7 @@ public abstract class AbstractTableReaderNodeFactory<C extends ReaderSpecificCon
      *
      * @return a new multi table reader
      */
-    private MultiTableReader<C> createMultiTableReader() {
+    protected final MultiTableReader<C> createMultiTableReader() {
         return new MultiTableReader<>(createMultiTableReadFactory(createReader()));
     }
 

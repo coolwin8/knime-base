@@ -62,7 +62,7 @@ import org.knime.filehandling.core.node.table.reader.config.ReaderSpecificConfig
  * @noreference non-public API
  * @noinstantiate non-public API
  */
-final class MultiTableReader<C extends ReaderSpecificConfig<C>> extends GenericMultiTableReader<Path, C> {
+public final class MultiTableReader<C extends ReaderSpecificConfig<C>> extends GenericMultiTableReader<Path, C> {
 
     /**
      * Constructor.
