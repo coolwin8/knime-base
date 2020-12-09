@@ -126,7 +126,7 @@ public final class DefaultMultiTableReadConfig<C extends ReaderSpecificConfig<C>
 
     @Override
     public void validate(final NodeSettingsRO settings) throws InvalidSettingsException {
-        m_serializer.validate(settings);
+        m_serializer.validate(this, settings);
     }
 
 }

@@ -141,7 +141,9 @@ enum TableManipulatorConfigSerializer implements
     }
 
     @Override
-    public void validate(final NodeSettingsRO settings) throws InvalidSettingsException {
+    public void validate(
+        final GenericDefaultMultiTableReadConfig<Table, TableManipulatorConfig, DefaultTableReadConfig<TableManipulatorConfig>> config,
+        final NodeSettingsRO settings) throws InvalidSettingsException {
         if (settings.containsKey(CFG_TABLE_SPEC_CONFIG)) {
             GenericDefaultTableSpecConfig.validate(settings.getNodeSettings(CFG_TABLE_SPEC_CONFIG), PATH_LOADER);
         }
